@@ -17,7 +17,7 @@ class GenreController extends Controller
     {
         return Inertia::render('Genres/Index', [
             'genres' => Genre::query()
-                ->latest()
+                ->orderBy('name', 'asc')
                 ->get()
                 ->map(fn($genre) => [
                     'id' => $genre->id,
@@ -37,9 +37,12 @@ class GenreController extends Controller
 
         $validated['slug'] = Str::slug($validated['name']);
 
-        Genre::create($validated);
+        $genre = Genre::create($validated);
 
-        return redirect()->route('genres.index')->with('success', 'Genre created successfully!');
+        return back()->with([
+            'success' => 'Genre created successfully!',
+            'created_genre' => $genre,
+        ]);
     }
 
     public function update(Request $request, Genre $genre)

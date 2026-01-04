@@ -10,9 +10,9 @@ return new class extends Migration
     {
         Schema::create('loans', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('book_copy_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('user_id')->constrained()->cascadeOnDelete(); // The borrower
-            $table->foreignId('librarian_id')->nullable()->constrained('users')->nullOnDelete(); // Who processed the loan
+            $table->integer('book_copy_id')->nullable()->constrained()->nullOnDelete();
+            $table->integer('user_id')->constrained()->cascadeOnDelete(); // The borrower
+            $table->integer('librarian_id')->nullable()->constrained('users')->nullOnDelete(); // Who processed the loan
             $table->date('borrowed_date');
             $table->date('due_date');
             $table->date('returned_date')->nullable();

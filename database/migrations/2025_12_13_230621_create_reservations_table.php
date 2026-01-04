@@ -10,12 +10,12 @@ return new class extends Migration
     {
         Schema::create('reservations', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('book_id')->constrained()->cascadeOnDelete(); // Reserve any copy of this book
-            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+            $table->integer('book_id')->constrained()->cascadeOnDelete(); // Reserve any copy of this book
+            $table->integer('user_id')->constrained()->cascadeOnDelete();
             $table->date('reserved_date');
             $table->date('expiry_date');
             $table->enum('status', ['pending', 'ready', 'fulfilled', 'expired', 'cancelled'])->default('pending');
-            $table->foreignId('book_copy_id')->nullable()->constrained()->nullOnDelete(); // Assigned when ready
+            $table->integer('book_copy_id')->nullable()->constrained()->nullOnDelete(); // Assigned when ready
             $table->timestamp('notified_at')->nullable();
             $table->timestamps();
 

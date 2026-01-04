@@ -13,7 +13,7 @@ return new class extends Migration
         Schema::create('book_copies', function (Blueprint $table) {
             $table->id();
             $table->uuid('barcode')->unique()->default(DB::raw('(UUID())')); // Unique identifier for each copy
-            $table->foreignId('book_id')->constrained()->cascadeOnDelete();
+            $table->integer('book_id')->constrained()->cascadeOnDelete();
             $table->string('call_number')->nullable(); // Library classification number
             $table->enum('condition', ['excellent', 'good', 'fair', 'poor', 'damaged'])->default('good');
             $table->enum('status', ['available', 'borrowed', 'reserved', 'maintenance', 'lost'])->default('available');

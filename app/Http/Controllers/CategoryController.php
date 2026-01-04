@@ -38,9 +38,12 @@ class CategoryController extends Controller
 
         $validated['slug'] = Str::slug($validated['name']);
 
-        Category::create($validated);
+        $category = Category::create($validated);
 
-        return redirect()->route('categories.index')->with('success', 'Category created successfully!');
+        return back()->with([
+                'success' => 'Category updated successfully!',
+                 'created_category' => $category,
+        ]);
     }
 
     public function update(Request $request, Category $category)

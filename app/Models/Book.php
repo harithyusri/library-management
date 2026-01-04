@@ -11,64 +11,126 @@ class Book extends Model
 
     protected $fillable = [
         'title',
-        'author_id',
+        'author_name',
         'isbn',
-        'description',
+        'genre_ids',
+        'category_id',
         'publisher_id',
-        'published_date',
+        'publication_year',
+        'format',
         'pages',
         'language',
-        'format',
-        'price',
-        'cover_image',
-        'category_id',
-        'rating',
+        'description',
+        'cover_image_url',
     ];
 
     protected $casts = [
-        'published_date' => 'date',
-        'price' => 'decimal:2',
-        'rating' => 'decimal:2',
+        'genre_ids' => 'array',
+        'publication_year' => 'integer',
+        'pages' => 'integer',
     ];
 
-    public function copies()
+    private static function formatOptions()
     {
-        return $this->hasMany(BookCopy::class);
+        return [
+            'hardcover' => 'Hardcover',
+            'paperback' => 'Paperback',
+            'ebook' => 'E-book',
+            'audiobook' => 'Audiobook',
+        ];
     }
 
-    public function availableCopies()
+    private static function languageOptions()
     {
-        return $this->hasMany(BookCopy::class)->where('status', 'available');
+        return [
+            'english' => 'English',
+            'spanish' => 'Spanish',
+            'french' => 'French',
+            'german' => 'German',
+            'chinese' => 'Chinese',
+            'japanese' => 'Japanese',
+            'russian' => 'Russian',
+            'italian' => 'Italian',
+            'portuguese' => 'Portuguese',
+            'arabic' => 'Arabic',
+        ];
     }
 
-    public function publisher()
+    /**
+     * Get the genres that own the book.
+     */
+   public function genres()
     {
-        return $this->belongsTo(Publisher::class);
+        return $this->belongsToMany(Genre::class, 'book_genre', 'book_id', 'genre_id');
     }
 
+    /**
+     * Get the category that owns the book.
+     */
     public function category()
     {
         return $this->belongsTo(Category::class);
     }
 
-    public function genres()
+    /**
+     * Get the publisher that owns the book.
+     */
+    public function publisher()
     {
-        return $this->belongsToMany(Genre::class);
+        return $this->belongsTo(Publisher::class);
     }
 
-    public function reservations()
+    public static function getFormatOptions()
     {
-        return $this->hasMany(Reservation::class);
+        return self::formatOptions();
     }
 
-    // Helper methods
-    public function getTotalCopiesAttribute()
+    public static function getLanguageOptions()
     {
-        return $this->copies()->count();
+        return self::languageOptions();
     }
 
-    public function getAvailableCopiesCountAttribute()
+    /**
+     * Scope a query to search by title or author.
+     */
+    public function scopeSearch($query, $search)
     {
-        return $this->copies()->where('status', 'available')->count();
+        return $query->where(function ($q) use ($search) {
+            $q->where('title', 'like', "%{$search}%")
+              ->orWhere('author_name', 'like', "%{$search}%")
+              ->orWhere('isbn', 'like', "%{$search}%");
+        });
+    }
+
+    /**
+     * Scope a query to filter by genre ID.
+     */
+    public function scopeByGenre($query, $genreId)
+    {
+        return $query->where('genre_id', $genreId);
+    }
+
+    /**
+     * Scope a query to filter by category ID.
+     */
+    public function scopeByCategory($query, $categoryId)
+    {
+        return $query->where('category_id', $categoryId);
+    }
+
+    /**
+     * Scope a query to filter by format.
+     */
+    public function scopeByFormat($query, $format)
+    {
+        return $query->where('format', $format);
+    }
+
+    /**
+     * Scope a query to filter by language.
+     */
+    public function scopeByLanguage($query, $language)
+    {
+        return $query->where('language', $language);
     }
 }

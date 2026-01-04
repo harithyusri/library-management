@@ -37,9 +37,12 @@ class PublisherController extends Controller
 
         $validated['slug'] = Str::slug($validated['name']);
 
-        Publisher::create($validated);
+        $publisher = Publisher::create($validated);
 
-        return redirect()->route('publishers.index')->with('success', 'Publisher created successfully!');
+        return back()->with([
+            'success' => 'Publisher created successfully!',
+            'created_publisher' => $publisher,
+        ]);
     }
 
     public function update(Request $request, Publisher $publisher)

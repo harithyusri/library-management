@@ -7,7 +7,7 @@ import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, Di
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import FlashAlert from '@/components/FlashAlert.vue'; // Import FlashAlert
+import FlashAlert from '@/components/FlashAlert.vue';
 import { useForm, router } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
 import { PencilIcon, TrashIcon, FolderIcon } from 'lucide-vue-next';

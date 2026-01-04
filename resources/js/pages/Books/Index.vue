@@ -10,7 +10,7 @@ import type { AppPageProps } from '@/types';
 const breadcrumbs: BreadcrumbItem[] = [
     {
         title: 'Books',
-        href: '/books',
+        href: route('books.index'),
     },
 ];
 
@@ -20,19 +20,41 @@ const breadcrumbs: BreadcrumbItem[] = [
 interface Book {
     id: number;
     title: string;
-    author: string;
-    status: string;
+    author_name: string;
+    isbn?: string;
     format: string;
-    quantity: number;
-    available_quantity: number;
-    rating?: number;
-    genre?: string;
+    pages: number;
+    language: string;
+    publication_year?: number;
+    description?: string;
     cover_image_url?: string;
+    genres: {
+        id: number;
+        name: string;
+    }[];
+    category: {
+        id: number;
+        name: string;
+    };
+    publisher?: {
+        id: number;
+        name: string;
+    };
 }
 
 interface PaginatedBooks {
     data: Book[];
     links: any[];
+}
+
+interface Genre {
+    id: number;
+    name: string;
+}
+
+interface Category {
+    id: number;
+    name: string;
 }
 
 /* =========================
@@ -41,7 +63,10 @@ interface PaginatedBooks {
 const props = defineProps<{
     books: PaginatedBooks;
     filters: Record<string, any>;
-    genres: string[];
+    genres: Genre[];
+    categories: Category[];
+    formatOptions: Record<string, string>;
+    languageOptions: Record<string, string>;
 }>();
 
 /* =========================
@@ -49,10 +74,10 @@ const props = defineProps<{
 ========================= */
 const searchForm = reactive({
     search: props.filters?.search ?? '',
-    status: props.filters?.status ?? 'all',
     genre: props.filters?.genre ?? 'all',
+    category: props.filters?.category ?? 'all',
     format: props.filters?.format ?? 'all',
-    available_only: props.filters?.available_only ?? false,
+    language: props.filters?.language ?? 'all',
     sort_by: props.filters?.sort_by ?? 'created_at',
     sort_order: props.filters?.sort_order ?? 'desc',
 });
@@ -77,10 +102,6 @@ const search = () => {
     });
 };
 
-const formatStatus = (status: string): string => {
-    return status.charAt(0).toUpperCase() + status.slice(1);
-};
-
 const formatBookFormat = (format: string): string => {
     const formats: Record<string, string> = {
         hardcover: 'Hardcover',
@@ -90,17 +111,6 @@ const formatBookFormat = (format: string): string => {
     };
 
     return formats[format] ?? format;
-};
-
-const getStatusClass = (status: string): string => {
-    const classes: Record<string, string> = {
-        available: 'bg-green-100 text-green-800',
-        borrowed: 'bg-blue-100 text-blue-800',
-        reserved: 'bg-yellow-100 text-yellow-800',
-        maintenance: 'bg-red-100 text-red-800',
-    };
-
-    return classes[status] ?? 'bg-gray-100 text-gray-800';
 };
 
 interface FlashMessages {
@@ -126,17 +136,10 @@ const page = usePage<AppPageProps & {
                     Books Library
                 </h1>
 
-                <div class="flex gap-2">
-                    <Link :href="route('books.my-books')"
-                        class="rounded-md bg-secondary px-4 py-2 text-sm font-medium text-secondary-foreground hover:bg-secondary/80">
-                        My Books
-                    </Link>
-
-                    <Link :href="route('books.create')"
-                        class="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90">
-                        Add Book
-                    </Link>
-                </div>
+                <Link :href="route('books.create')"
+                    class="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90">
+                    Add Book
+                </Link>
             </div>
 
             <!-- Flash Messages -->
@@ -150,17 +153,16 @@ const page = usePage<AppPageProps & {
                 {{ page.props.flash.error }}
             </div>
 
-
             <!-- Filters -->
             <div class="rounded-xl border border-border bg-background p-6">
-                <div class="grid gap-4 md:grid-cols-4">
+                <div class="grid gap-4 md:grid-cols-5">
                     <!-- Search -->
                     <div class="md:col-span-2">
                         <label class="mb-1 block text-sm font-medium text-foreground">
                             Search
                         </label>
-                        <input vgani="search" v-model="searchForm.search" @input="debounceSearch" type="text"
-                            placeholder="Search by title or author" class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground
+                        <input v-model="searchForm.search" @input="debounceSearch" type="text"
+                            placeholder="Search by title, author, or ISBN" class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground
                                    focus:border-ring focus:ring-ring" />
                     </div>
 
@@ -172,24 +174,37 @@ const page = usePage<AppPageProps & {
                         <select v-model="searchForm.genre" @change="search"
                             class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground">
                             <option value="all">All Genres</option>
-                            <option v-for="genre in genres" :key="genre" :value="genre">
-                                {{ genre }}
+                            <option v-for="genre in genres" :key="genre.id" :value="genre.id">
+                                {{ genre.name }}
                             </option>
                         </select>
                     </div>
 
-                    <!-- Status -->
+                    <!-- Category -->
                     <div>
                         <label class="mb-1 block text-sm font-medium text-foreground">
-                            Status
+                            Category
                         </label>
-                        <select v-model="searchForm.status" @change="search"
+                        <select v-model="searchForm.category" @change="search"
                             class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground">
-                            <option value="all">All Status</option>
-                            <option value="available">Available</option>
-                            <option value="borrowed">Borrowed</option>
-                            <option value="reserved">Reserved</option>
-                            <option value="maintenance">Maintenance</option>
+                            <option value="all">All Categories</option>
+                            <option v-for="category in categories" :key="category.id" :value="category.id">
+                                {{ category.name }}
+                            </option>
+                        </select>
+                    </div>
+
+                    <!-- Format -->
+                    <div>
+                        <label class="mb-1 block text-sm font-medium text-foreground">
+                            Format
+                        </label>
+                        <select v-model="searchForm.format" @change="search"
+                            class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground">
+                            <option value="all">All Formats</option>
+                            <option v-for="(label, key) in formatOptions" :key="key" :value="key">
+                                {{ label }}
+                            </option>
                         </select>
                     </div>
                 </div>
@@ -203,10 +218,17 @@ const page = usePage<AppPageProps & {
                     <div class="relative h-60 bg-muted">
                         <img v-if="book.cover_image_url" :src="book.cover_image_url" :alt="book.title"
                             class="h-full w-full object-cover" />
+                        <div v-else class="flex h-full w-full items-center justify-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-muted-foreground" fill="none"
+                                viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                            </svg>
+                        </div>
 
-                        <span :class="getStatusClass(book.status)"
-                            class="absolute right-2 top-2 rounded-full px-2 py-1 text-xs font-medium">
-                            {{ formatStatus(book.status) }}
+                        <span
+                            class="absolute right-2 top-2 rounded-full bg-primary/10 px-2 py-1 text-xs font-medium text-primary">
+                            {{ formatBookFormat(book.format) }}
                         </span>
                     </div>
 
@@ -217,17 +239,29 @@ const page = usePage<AppPageProps & {
                                 {{ book.title }}
                             </h3>
                             <p class="text-sm text-muted-foreground">
-                                by {{ book.author }}
+                                by {{ book.author_name }}
                             </p>
                         </div>
 
-                        <div class="flex gap-2 text-xs">
-                            <span class="rounded bg-muted px-2 py-1 text-muted-foreground">
-                                {{ book.genre ?? 'General' }}
+                        <div class="flex flex-wrap gap-2 text-xs">
+                            <span v-for="genre in book.genres" :key="genre.id"
+                                class="rounded bg-muted px-2 py-1 text-muted-foreground">
+                                {{ genre.name }}
                             </span>
-                            <span class="rounded bg-primary/10 px-2 py-1 text-primary">
-                                {{ formatBookFormat(book.format) }}
+
+                            <span class="rounded bg-secondary/20 px-2 py-1 text-secondary-foreground">
+                                {{ book.category.name }}
                             </span>
+                            <span v-if="book.publication_year"
+                                class="rounded bg-accent/20 px-2 py-1 text-accent-foreground">
+                                {{ book.publication_year }}
+                            </span>
+                        </div>
+
+                        <div class="flex gap-2 text-xs text-muted-foreground">
+                            <span>{{ book.pages }} pages</span>
+                            <span>•</span>
+                            <span>{{ book.language }}</span>
                         </div>
 
                         <div class="flex gap-2">
@@ -246,17 +280,37 @@ const page = usePage<AppPageProps & {
 
             <!-- Empty State -->
             <div v-else class="rounded-xl border border-border bg-background p-12 text-center">
-                <h3 class="text-sm font-medium text-foreground">
+                <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-12 w-12 text-muted-foreground" fill="none"
+                    viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                </svg>
+                <h3 class="mt-4 text-sm font-medium text-foreground">
                     No books found
                 </h3>
                 <p class="mt-1 text-sm text-muted-foreground">
-                    Get started by adding a new book.
+                    Get started by adding a new book to your library.
                 </p>
+                <Link :href="route('books.create')"
+                    class="mt-4 inline-flex items-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90">
+                    Add Book
+                </Link>
             </div>
 
             <!-- Pagination -->
             <div v-if="books.data.length" class="rounded-xl border border-border bg-background p-4">
-                <Pagination :links="books.links" />
+                <div class="flex items-center justify-between">
+                    <div class="text-sm text-muted-foreground">
+                        Showing {{ books.data.length }} books
+                    </div>
+                    <div class="flex gap-2">
+                        <Link v-for="(link, index) in books.links" :key="index" :href="link.url || ''" :class="[
+                            'rounded-md px-3 py-2 text-sm',
+                            link.active ? 'bg-primary text-primary-foreground' : 'bg-muted text-foreground hover:bg-muted/80',
+                            !link.url && 'pointer-events-none opacity-50'
+                        ]" v-html="link.label" />
+                    </div>
+                </div>
             </div>
 
         </div>
