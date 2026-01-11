@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { route } from "ziggy-js";
 import { reactive } from 'vue';
-import { Link, router, usePage } from '@inertiajs/vue3';
+import { Link, router } from '@inertiajs/vue3';
 import { type BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/vue3';
 import AppLayout from '@/layouts/AppLayout.vue';
-import type { AppPageProps } from '@/types';
+import FlashAlert from '@/components/FlashAlert.vue';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -113,14 +113,6 @@ const formatBookFormat = (format: string): string => {
     return formats[format] ?? format;
 };
 
-interface FlashMessages {
-    success?: string;
-    error?: string;
-}
-
-const page = usePage<AppPageProps & {
-    flash?: FlashMessages;
-}>();
 </script>
 
 <template>
@@ -130,27 +122,17 @@ const page = usePage<AppPageProps & {
     <AppLayout :breadcrumbs="breadcrumbs">
         <div class="flex flex-1 flex-col gap-6 overflow-x-auto p-4">
 
+            <FlashAlert />
             <!-- Header -->
             <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <h1 class="text-2xl font-semibold text-foreground">
-                    Books Library
+                    Library Books List
                 </h1>
 
                 <Link :href="route('books.create')"
                     class="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90">
                     Add Book
                 </Link>
-            </div>
-
-            <!-- Flash Messages -->
-            <div v-if="page.props.flash?.success"
-                class="rounded-md border border-border bg-muted px-4 py-3 text-sm text-foreground">
-                {{ page.props.flash.success }}
-            </div>
-
-            <div v-if="page.props.flash?.error"
-                class="rounded-md border border-destructive/50 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-                {{ page.props.flash.error }}
             </div>
 
             <!-- Filters -->
@@ -236,7 +218,10 @@ const page = usePage<AppPageProps & {
                     <div class="flex flex-col gap-3 p-4">
                         <div>
                             <h3 class="line-clamp-2 font-semibold text-foreground">
-                                {{ book.title }}
+                                <Link :href="route('books.show', book.id)">
+                                    {{ book.title }}
+                                </Link>
+
                             </h3>
                             <p class="text-sm text-muted-foreground">
                                 by {{ book.author_name }}
@@ -244,10 +229,12 @@ const page = usePage<AppPageProps & {
                         </div>
 
                         <div class="flex flex-wrap gap-2 text-xs">
-                            <span v-for="genre in book.genres" :key="genre.id"
-                                class="rounded bg-muted px-2 py-1 text-muted-foreground">
-                                {{ genre.name }}
-                            </span>
+                            <div class="flex flex-wrap gap-2 w-full">
+                                <span v-for="genre in book.genres" :key="genre.id"
+                                    class="rounded bg-muted px-2 py-1 text-muted-foreground">
+                                    {{ genre.name }}
+                                </span>
+                            </div>
 
                             <span class="rounded bg-secondary/20 px-2 py-1 text-secondary-foreground">
                                 {{ book.category.name }}
@@ -268,10 +255,6 @@ const page = usePage<AppPageProps & {
                             <Link :href="route('books.show', book.id)"
                                 class="flex-1 rounded-md bg-muted px-3 py-2 text-center text-sm text-foreground hover:bg-muted/80">
                                 View
-                            </Link>
-                            <Link :href="route('books.edit', book.id)"
-                                class="flex-1 rounded-md bg-secondary px-3 py-2 text-center text-sm text-secondary-foreground hover:bg-secondary/80">
-                                Edit
                             </Link>
                         </div>
                     </div>

@@ -3,6 +3,7 @@
 use App\Http\Controllers\BookController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\GenreController;
+use App\Http\Controllers\LoanController;
 use App\Http\Controllers\PublisherController;
 use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Features;
@@ -34,6 +35,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::match(['put', 'patch'], 'books/{book}', [BookController::class, 'update'])->name('books.update');
     Route::delete('books/{book}', [BookController::class, 'destroy'])->name('books.destroy');
 
+    Route::prefix('books/{book}/copies')->name('books.copies.')->group(function () {
+        Route::post('/', [BookController::class, 'storeCopy'])->name('store');
+        Route::put('/{copy}', [BookController::class, 'updateCopy'])->name('update');
+        Route::post('/{copy}/generate-qr', [BookController::class, 'generateCopyQRCode'])->name('generate-qr');
+        Route::delete('/{copy}', [BookController::class, 'destroyCopy'])->name('destroy');
+    });
+
+    Route::get('scan/{barcode}', [BookController::class, 'scanBarcode'])->name('books.scan');
+
     // --- Additional book routes ---
     Route::get('my-books', [BookController::class, 'myBooks'])->name('books.my-books');
     Route::post('books/{book}/borrow', [BookController::class, 'borrow'])->name('books.borrow');
@@ -53,6 +63,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('genres/store', [GenreController::class, 'store'])->name('genres.store');
     Route::put('genres/update/{genre}', [GenreController::class, 'update'])->name('genres.update');
     Route::delete('genres/{genre}', [GenreController::class, 'destroy'])->name('genres.destroy');
+
+    // --- Loan/Borrow Routes ---
+    Route::get('loans', [LoanController::class, 'index'])->name('loans.index');
+    Route::get('loans/{loan}', [LoanController::class, 'show'])->name('loans.show');
+    Route::get('loans/create', [LoanController::class, 'create'])->name('loans.create');
+    Route::post('loans', [LoanController::class, 'store'])->name('loans.store');
+    Route::put('loans/{loan}/return', [LoanController::class, 'returnLoan'])->name('loans.return');
 });
 
 require __DIR__.'/settings.php';

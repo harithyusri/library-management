@@ -14,7 +14,7 @@ import {
 import { dashboard } from '@/routes';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/vue3';
-import { BookOpen, Folder, LayoutGrid, Library, FileCog  } from 'lucide-vue-next';
+import { BookOpen, Folder, LayoutGrid, Library, FileCog, Handshake } from 'lucide-vue-next';
 import AppLogo from './AppLogo.vue';
 
 const mainNavItems: NavItem[] = [
@@ -24,9 +24,14 @@ const mainNavItems: NavItem[] = [
         icon: LayoutGrid,
     },
     {
+        title: 'Book Loans',
+        href: '/loans',
+        icon: Handshake,
+    },
+    {
         title: 'Books',
         href: '/books',
-        icon: Library ,
+        icon: Library,
     },
     {
         title: 'Catalog',

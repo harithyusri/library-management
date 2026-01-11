@@ -80,6 +80,11 @@ class Book extends Model
         return $this->belongsTo(Publisher::class);
     }
 
+    public function copies()
+    {
+        return $this->hasMany(BookCopy::class);
+    }
+
     public static function getFormatOptions()
     {
         return self::formatOptions();
