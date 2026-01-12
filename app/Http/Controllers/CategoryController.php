@@ -22,6 +22,7 @@ class CategoryController extends Controller
                 ->map(fn($category) => [
                     'id' => $category->id,
                     'name' => $category->name,
+                    'code' => $category->code,
                     'slug' => $category->slug,
                     'description' => $category->description,
                     'created_at' => $category->created_at->format('M d, Y'),
@@ -33,6 +34,7 @@ class CategoryController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255|unique:categories,name',
+            'code' => 'required|string|max:50|unique:categories,code',
             'description' => 'nullable|string|max:500',
         ]);
 
@@ -50,6 +52,7 @@ class CategoryController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255|unique:categories,name,' . $category->id,
+            'code' => 'required|string|max:50|unique:categories,code,' . $category->id,
             'description' => 'nullable|string|max:500',
         ]);
 

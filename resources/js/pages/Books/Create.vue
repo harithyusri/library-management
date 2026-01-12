@@ -89,7 +89,7 @@ const form = useForm({
     genre_ids: [] as string[],
     category_id: '',
     publisher_id: '',
-    publication_year: '',
+    published_year: '',
     format: '',
     pages: '',
     language: '',
@@ -144,6 +144,7 @@ const cancel = () => {
 const isCategoryDialogOpen = ref(false);
 const categoryForm = useForm({
     name: '',
+    code: '',
     description: '',
 });
 
@@ -261,7 +262,7 @@ const submitPublisher = () => {
                                 Title <span class="text-destructive">*</span>
                             </label>
                             <input v-model="form.title" type="text" placeholder="Enter book title" class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground
-                                       focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring"
+                                       focus:border-ring focus:outline-none"
                                 :class="{ 'border-destructive': form.errors.title }" />
                             <p v-if="form.errors.title" class="mt-1 text-xs text-destructive">
                                 {{ form.errors.title }}
@@ -274,7 +275,7 @@ const submitPublisher = () => {
                                 Author <span class="text-destructive">*</span>
                             </label>
                             <input v-model="form.author_name" type="text" placeholder="Enter author name" class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground
-                                       focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring"
+                                       focus:border-ring focus:outline-none"
                                 :class="{ 'border-destructive': form.errors.author_name }" />
                             <p v-if="form.errors.author_name" class="mt-1 text-xs text-destructive">
                                 {{ form.errors.author_name }}
@@ -287,7 +288,7 @@ const submitPublisher = () => {
                                 ISBN
                             </label>
                             <input v-model="form.isbn" type="text" placeholder="Enter ISBN" class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground
-                                       focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring"
+                                       focus:border-ring focus:outline-none"
                                 :class="{ 'border-destructive': form.errors.isbn }" />
                             <p v-if="form.errors.isbn" class="mt-1 text-xs text-destructive">
                                 {{ form.errors.isbn }}
@@ -354,6 +355,15 @@ const submitPublisher = () => {
                                                     :class="{ 'border-destructive': categoryForm.errors.name }" />
                                                 <span v-if="categoryForm.errors.name" class="text-xs text-destructive">
                                                     {{ categoryForm.errors.name }}
+                                                </span>
+                                            </div>
+
+                                            <div class="grid gap-2">
+                                                <Label for="name">Code</Label>
+                                                <Input id="name" v-model="categoryForm.code" @input="categoryForm.code = categoryForm.code.toUpperCase()"
+                                                    :class="{ 'border-destructive': categoryForm.errors.code }" />
+                                                <span v-if="categoryForm.errors.code" class="text-xs text-destructive">
+                                                    {{ categoryForm.errors.code }}
                                                 </span>
                                             </div>
 
@@ -586,17 +596,17 @@ const submitPublisher = () => {
                             </p>
                         </div>
 
-                        <!-- Publication Year -->
+                        <!-- Published Year -->
                         <div>
                             <label class="mb-2 block text-sm font-medium text-foreground">
-                                Publication Year
+                                Published Year
                             </label>
-                            <input v-model="form.publication_year" type="number" min="1000"
+                            <input v-model="form.published_year" type="number" min="1000"
                                 :max="new Date().getFullYear()" placeholder="YYYY" class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground
-                                       focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring"
-                                :class="{ 'border-destructive': form.errors.publication_year }" />
-                            <p v-if="form.errors.publication_year" class="mt-1 text-xs text-destructive">
-                                {{ form.errors.publication_year }}
+                                       focus:border-ring focus:outline-none"
+                                :class="{ 'border-destructive': form.errors.published_year }" />
+                            <p v-if="form.errors.published_year" class="mt-1 text-xs text-destructive">
+                                {{ form.errors.published_year }}
                             </p>
                         </div>
 
@@ -606,7 +616,7 @@ const submitPublisher = () => {
                                 Description
                             </label>
                             <textarea v-model="form.description" rows="4" placeholder="Enter book description" class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground
-                                       focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+                                       focus:border-ring focus:outline-none resize-none"
                                 :class="{ 'border-destructive': form.errors.description }"></textarea>
                             <p v-if="form.errors.description" class="mt-1 text-xs text-destructive">
                                 {{ form.errors.description }}
@@ -676,7 +686,7 @@ const submitPublisher = () => {
                             </label>
                             <input v-model.number="form.pages" type="number" min="1" placeholder="Enter number of pages"
                                 class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground
-                                       focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring"
+                                       focus:border-ring focus:outline-none"
                                 :class="{ 'border-destructive': form.errors.pages }" />
                             <p v-if="form.errors.pages" class="mt-1 text-xs text-destructive">
                                 {{ form.errors.pages }}
@@ -698,7 +708,7 @@ const submitPublisher = () => {
                             <img :src="coverImagePreview" alt="Cover preview"
                                 class="h-48 w-auto rounded-lg border border-border object-cover" />
                             <button type="button" @click="removeCoverImage" class="absolute -right-2 -top-2 rounded-full bg-destructive p-1.5 text-destructive-foreground
-                                       hover:bg-destructive/90 focus:outline-none focus:ring-2 focus:ring-ring">
+                                       hover:bg-destructive/90 focus:outline-none">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20"
                                     fill="currentColor">
                                     <path fill-rule="evenodd"

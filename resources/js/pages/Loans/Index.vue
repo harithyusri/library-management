@@ -172,9 +172,6 @@ const getDaysUntilDue = (dueDate: string, returnedDate: string | null): string =
                     <h1 class="text-2xl font-semibold text-foreground">
                         Book Loans
                     </h1>
-                    <p class="text-sm text-muted-foreground">
-                        Manage and track all book borrowing activities
-                    </p>
                 </div>
 
                 <Link :href="route('loans.create')">
@@ -185,66 +182,60 @@ const getDaysUntilDue = (dueDate: string, returnedDate: string | null): string =
             </div>
 
             <!-- Filters -->
-            <Card>
-                <CardHeader>
-                    <CardTitle>Filters</CardTitle>
-                    <CardDescription>Search and filter loan records</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <div class="grid gap-4 md:grid-cols-4">
-                        <!-- Search Borrower Name -->
-                        <div>
-                            <label class="mb-2 block text-sm font-medium text-foreground">
-                                Borrower Name
-                            </label>
-                            <Input
-                                v-model="searchForm.search"
-                                @input="debounceSearch"
-                                type="text"
-                                placeholder="Search by name or email"
-                            />
-                        </div>
-
-                        <!-- Search Book Title -->
-                        <div>
-                            <label class="mb-2 block text-sm font-medium text-foreground">
-                                Book Title
-                            </label>
-                            <Input
-                                v-model="searchForm.book_search"
-                                @input="debounceSearch"
-                                type="text"
-                                placeholder="Search by title or author"
-                            />
-                        </div>
-
-                        <!-- Status Filter -->
-                        <div>
-                            <label class="mb-2 block text-sm font-medium text-foreground">
-                                Status
-                            </label>
-                            <Select v-model="searchForm.status" @update:model-value="search">
-                                <SelectTrigger>
-                                    <SelectValue placeholder="All Statuses" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">All Statuses</SelectItem>
-                                    <SelectItem value="active">Active</SelectItem>
-                                    <SelectItem value="overdue">Overdue</SelectItem>
-                                    <SelectItem value="returned">Returned</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-
-                        <!-- Clear Filters Button -->
-                        <div class="flex items-end">
-                            <Button variant="outline" @click="clearFilters" class="w-full">
-                                Clear Filters
-                            </Button>
-                        </div>
+            <div class="rounded-xl border border-border bg-background p-6">
+                <div class="grid gap-4 md:grid-cols-6">
+                    <!-- Search Borrower Name -->
+                    <div class="md:col-span-2">
+                        <label class="mb-2 block text-sm font-medium text-foreground">
+                            Borrower Name
+                        </label>
+                        <Input
+                            v-model="searchForm.search"
+                            @input="debounceSearch"
+                            type="text"
+                            placeholder="Search by name or email"
+                        />
                     </div>
-                </CardContent>
-            </Card>
+
+                    <!-- Search Book Title -->
+                    <div class="md:col-span-2">
+                        <label class="mb-2 block text-sm font-medium text-foreground">
+                            Book Title
+                        </label>
+                        <Input
+                            v-model="searchForm.book_search"
+                            @input="debounceSearch"
+                            type="text"
+                            placeholder="Search by title or author"
+                        />
+                    </div>
+
+                    <!-- Status Filter -->
+                    <div>
+                        <label class="mb-2 block text-sm font-medium text-foreground">
+                            Status
+                        </label>
+                        <Select v-model="searchForm.status" @update:model-value="search">
+                            <SelectTrigger>
+                                <SelectValue placeholder="All Statuses" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All Statuses</SelectItem>
+                                <SelectItem value="active">Active</SelectItem>
+                                <SelectItem value="overdue">Overdue</SelectItem>
+                                <SelectItem value="returned">Returned</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    <!-- Clear Filters Button -->
+                    <div class="flex items-end">
+                        <Button @click="clearFilters" class="w-full">
+                            Clear Filters
+                        </Button>
+                    </div>
+                </div>
+            </div>
 
             <!-- Loans Table -->
             <Card>

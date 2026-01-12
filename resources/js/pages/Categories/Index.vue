@@ -23,6 +23,7 @@ defineProps<{
     categories: Array<{
         id: number;
         name: string;
+        code: string;
         description: string;
     }>;
 }>();
@@ -33,6 +34,7 @@ const editingCategory = ref<number | null>(null);
 
 const form = useForm({
     name: '',
+    code: '',
     description: '',
 });
 
@@ -58,6 +60,7 @@ const openAddDialog = () => {
 const openEditDialog = (category: any) => {
     editingCategory.value = category.id;
     form.name = category.name;
+    form.code = category.code;
     form.description = category.description || '';
     form.clearErrors();
     isOpen.value = true;
@@ -138,6 +141,7 @@ const confirmDelete = () => {
                         <TableHeader>
                             <TableRow class="hover:bg-transparent">
                                 <TableHead class="font-semibold">Name</TableHead>
+                                <TableHead class="font-semibold">Code</TableHead>
                                 <TableHead class="font-semibold">Description</TableHead>
                                 <TableHead class="text-right font-semibold">Actions</TableHead>
                             </TableRow>
@@ -149,6 +153,9 @@ const confirmDelete = () => {
                                     <div class="flex items-center gap-2">
                                         {{ category.name }}
                                     </div>
+                                </TableCell>
+                                <TableCell class="text-muted-foreground">
+                                    {{ category.code }}
                                 </TableCell>
                                 <TableCell class="text-muted-foreground">
                                     {{ category.description || 'No description provided' }}
@@ -196,6 +203,13 @@ const confirmDelete = () => {
                                 <Input id="name" v-model="form.name" :class="{ 'border-red-500': form.errors.name }" />
                                 <p v-if="form.errors.name" class="text-sm text-red-500">
                                     {{ form.errors.name }}
+                                </p>
+                            </div>
+                            <div class="grid gap-3">
+                                <Label for="name">Code</Label>
+                                <Input id="name" v-model="form.code" maxlength="3" :class="{ 'border-red-500': form.errors.code }" />
+                                <p v-if="form.errors.code" class="text-sm text-red-500">
+                                    {{ form.errors.code }}
                                 </p>
                             </div>
                             <div class="grid gap-3">

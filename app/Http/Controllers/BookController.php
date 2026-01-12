@@ -119,7 +119,7 @@ class BookController extends Controller
                 'category_id' => 'required|exists:categories,id',
                 'publisher_id' => 'required|exists:publishers,id',
 
-                'publication_year' => 'nullable|integer|min:1000|max:' . date('Y'),
+                'published_year' => 'nullable|integer|min:1000|max:' . date('Y'),
                 'format' => 'required|in:hardcover,paperback,ebook,audiobook',
                 'pages' => 'required|integer|min:1',
                 'language' => 'required|string|max:50',
@@ -148,9 +148,9 @@ class BookController extends Controller
                 'publisher_id.exists' => 'The selected publisher is invalid.',
 
                 // Publication
-                'publication_year.integer' => 'Publication year must be a valid number.',
-                'publication_year.min' => 'Publication year is too early.',
-                'publication_year.max' => 'Publication year cannot be in the future.',
+                'published_year.integer' => 'Publication year must be a valid number.',
+                'published_year.min' => 'Publication year is too early.',
+                'published_year.max' => 'Publication year cannot be in the future.',
 
                 // Book details
                 'format.required' => 'Please select a book format.',

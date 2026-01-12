@@ -14,7 +14,7 @@ export interface NavItem {
     title: string;
     href?: string;
     icon?: LucideIcon;
-    isActive?: boolean;
+    isActive?: boolean | ComputedRef<boolean>;
     items?: NavItem[];
 }
 

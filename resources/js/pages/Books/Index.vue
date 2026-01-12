@@ -6,6 +6,13 @@ import { type BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/vue3';
 import AppLayout from '@/layouts/AppLayout.vue';
 import FlashAlert from '@/components/FlashAlert.vue';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select'
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -144,8 +151,8 @@ const formatBookFormat = (format: string): string => {
                             Search
                         </label>
                         <input v-model="searchForm.search" @input="debounceSearch" type="text"
-                            placeholder="Search by title, author, or ISBN" class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground
-                                   focus:border-ring focus:ring-ring" />
+                            placeholder="Search by title, author, or ISBN"
+                            class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-ring focus:ring-ring" />
                     </div>
 
                     <!-- Genre -->
@@ -153,13 +160,17 @@ const formatBookFormat = (format: string): string => {
                         <label class="mb-1 block text-sm font-medium text-foreground">
                             Genre
                         </label>
-                        <select v-model="searchForm.genre" @change="search"
-                            class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground">
-                            <option value="all">All Genres</option>
-                            <option v-for="genre in genres" :key="genre.id" :value="genre.id">
-                                {{ genre.name }}
-                            </option>
-                        </select>
+                        <Select v-model="searchForm.genre" @update:model-value="search">
+                            <SelectTrigger>
+                                <SelectValue placeholder="All Genres" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All Genres</SelectItem>
+                                <SelectItem v-for="genre in genres" :key="genre.id" :value="String(genre.id)">
+                                    {{ genre.name }}
+                                </SelectItem>
+                            </SelectContent>
+                        </Select>
                     </div>
 
                     <!-- Category -->

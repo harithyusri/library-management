@@ -13,41 +13,58 @@ import {
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
 import { type NavItem } from '@/types';
-import { Link } from '@inertiajs/vue3';
+
+import { Link, usePage } from '@inertiajs/vue3';
 import { BookOpen, Folder, LayoutGrid, Library, FileCog, Handshake } from 'lucide-vue-next';
+import { computed } from 'vue';
 import AppLogo from './AppLogo.vue';
+
+// Get current URL from Inertia
+const page = usePage();
+const currentUrl = computed(() => page.url);
 
 const mainNavItems: NavItem[] = [
     {
         title: 'Dashboard',
         href: '/dashboard',
         icon: LayoutGrid,
+        isActive: computed(() => currentUrl.value === '/dashboard' || currentUrl.value.startsWith('/dashboard')),
     },
     {
         title: 'Book Loans',
         href: '/loans',
         icon: Handshake,
+        isActive: computed(() => currentUrl.value.startsWith('/loans')),
     },
     {
         title: 'Books',
         href: '/books',
         icon: Library,
+        isActive: computed(() => currentUrl.value.startsWith('/books')),
     },
     {
         title: 'Catalog',
         icon: FileCog,
+        isActive: computed(() =>
+            currentUrl.value.startsWith('/categories') ||
+            currentUrl.value.startsWith('/publishers') ||
+            currentUrl.value.startsWith('/genres')
+        ),
         items: [
             {
                 title: 'Categories',
                 href: '/categories',
+                isActive: computed(() => currentUrl.value.startsWith('/categories')),
             },
             {
                 title: 'Publishers',
                 href: '/publishers',
+                isActive: computed(() => currentUrl.value.startsWith('/publishers')),
             },
             {
                 title: 'Genres',
                 href: '/genres',
+                isActive: computed(() => currentUrl.value.startsWith('/genres')),
             },
         ],
     },
