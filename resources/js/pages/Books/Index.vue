@@ -178,13 +178,17 @@ const formatBookFormat = (format: string): string => {
                         <label class="mb-1 block text-sm font-medium text-foreground">
                             Category
                         </label>
-                        <select v-model="searchForm.category" @change="search"
-                            class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground">
-                            <option value="all">All Categories</option>
-                            <option v-for="category in categories" :key="category.id" :value="category.id">
-                                {{ category.name }}
-                            </option>
-                        </select>
+                        <Select v-model="searchForm.category" @update:model-value="search">
+                            <SelectTrigger>
+                                <SelectValue placeholder="All Categories" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All Categories</SelectItem>
+                                <SelectItem v-for="category in categories" :key="category.id" :value="category.id">
+                                    {{ category.name }}
+                                </SelectItem>
+                            </SelectContent>
+                        </Select>
                     </div>
 
                     <!-- Format -->
@@ -192,13 +196,17 @@ const formatBookFormat = (format: string): string => {
                         <label class="mb-1 block text-sm font-medium text-foreground">
                             Format
                         </label>
-                        <select v-model="searchForm.format" @change="search"
-                            class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground">
-                            <option value="all">All Formats</option>
-                            <option v-for="(label, key) in formatOptions" :key="key" :value="key">
-                                {{ label }}
-                            </option>
-                        </select>
+                        <Select v-model="searchForm.format" @update:model-value="search">
+                            <SelectTrigger>
+                                <SelectValue placeholder="All Formats" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All Formats</SelectItem>
+                                <SelectItem v-for="(label, key) in formatOptions" :key="key" :value="key">
+                                    {{ label }}
+                                </SelectItem>
+                            </SelectContent>
+                        </Select>
                     </div>
                 </div>
             </div>

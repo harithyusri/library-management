@@ -396,13 +396,15 @@ class BookController extends Controller
      */
     public function storeCopy(Book $book)
     {
+        $book->load('category');
 
+        $callNumber = $this->generateCallNumber($book);
         // Create copy with UUID barcode
         $copy = $book->copies()->create([
             'barcode' => (string) Str::uuid(),
             'condition' => 'good',
             'status' => 'available',
-            'call_number' => $this->generateCallNumber($book),
+            'call_number' => $callNumber,
             'location' => 'Main Library',
         ]);
 
@@ -514,10 +516,13 @@ class BookController extends Controller
         $categoryCode = strtoupper(substr($categoryName, 0, 3));
 
         // Get author code (first 3 letters of last name)
-        $nameParts = explode(' ', $book->author_name);
-        $lastName = end($nameParts);
-        $authorCode = strtoupper(substr($lastName, 0, 3));
-
+        if (empty($book->author_name)) {
+            $authorCode = 'UNK';
+        } else {
+            $nameParts = explode(' ', trim($book->author_name));
+            $lastName = end($nameParts);
+            $authorCode = strtoupper(substr($lastName, 0, 3));
+        }
         // Copy number for this specific book
         $copyCount = $book->copies()->count() + 1;
         $copyNumber = str_pad($copyCount, 3, '0', STR_PAD_LEFT);

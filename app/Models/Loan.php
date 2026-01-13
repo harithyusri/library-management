@@ -3,9 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Loan extends Model
 {
+    use SoftDeletes;
+
     protected $fillable = [
         'book_copy_id',
         'user_id',
@@ -27,32 +30,55 @@ class Loan extends Model
         'fine_paid' => 'boolean',
     ];
 
+    /**
+     * Get the book copy that was loaned.
+     */
     public function bookCopy()
     {
         return $this->belongsTo(BookCopy::class);
     }
 
+    /**
+     * Get the user who borrowed the book.
+     */
     public function user()
     {
         return $this->belongsTo(User::class);
     }
 
+    /**
+     * Get the librarian who issued the loan.
+     */
     public function librarian()
     {
         return $this->belongsTo(User::class, 'librarian_id');
     }
 
-    public function isOverdue()
+    /**
+     * Check if loan is overdue.
+     */
+    public function isOverdue(): bool
     {
-        return !$this->returned_date && $this->due_date->isPast();
+        return !$this->returned_date && $this->due_date < now();
     }
 
-    public function calculateFine($finePerDay = 1.00)
+    /**
+     * Check if loan is active.
+     */
+    public function isActive(): bool
     {
-        if ($this->isOverdue()) {
-            $daysOverdue = now()->diffInDays($this->due_date);
-            return $daysOverdue * $finePerDay;
+        return $this->status === 'active' && !$this->returned_date;
+    }
+
+    /**
+     * Get days until due or overdue.
+     */
+    public function getDaysUntilDue(): int
+    {
+        if ($this->returned_date) {
+            return 0;
         }
-        return 0;
+
+        return now()->diffInDays($this->due_date, false);
     }
 }

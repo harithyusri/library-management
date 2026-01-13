@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\BookCopyApiController;
 use App\Http\Controllers\BookController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\GenreController;
@@ -66,10 +67,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // --- Loan/Borrow Routes ---
     Route::get('loans', [LoanController::class, 'index'])->name('loans.index');
-    Route::get('loans/{loan}', [LoanController::class, 'show'])->name('loans.show');
     Route::get('loans/create', [LoanController::class, 'create'])->name('loans.create');
+    Route::get('loans/{loan}', [LoanController::class, 'show'])->name('loans.show');
     Route::post('loans', [LoanController::class, 'store'])->name('loans.store');
-    Route::put('loans/{loan}/return', [LoanController::class, 'returnLoan'])->name('loans.return');
+    Route::put('loans/{loan}/return', [LoanController::class, 'return'])->name('loans.return');
+});
+
+// API routes for book copy search
+Route::prefix('api')->name('api.')->group(function () {
+    Route::get('book-copies/search', [BookCopyApiController::class, 'search'])->name('book-copies.search');
 });
 
 require __DIR__.'/settings.php';

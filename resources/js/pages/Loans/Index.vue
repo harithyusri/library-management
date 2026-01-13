@@ -159,6 +159,7 @@ const getDaysUntilDue = (dueDate: string, returnedDate: string | null): string =
 </script>
 
 <template>
+
     <Head title="Book Loans" />
 
     <AppLayout :breadcrumbs="breadcrumbs">
@@ -183,55 +184,35 @@ const getDaysUntilDue = (dueDate: string, returnedDate: string | null): string =
 
             <!-- Filters -->
             <div class="rounded-xl border border-border bg-background p-6">
-                <div class="grid gap-4 md:grid-cols-6">
-                    <!-- Search Borrower Name -->
+                <div class="grid gap-4 md:grid-cols-6 items-end">
+
                     <div class="md:col-span-2">
-                        <label class="mb-2 block text-sm font-medium text-foreground">
-                            Borrower Name
-                        </label>
-                        <Input
-                            v-model="searchForm.search"
-                            @input="debounceSearch"
-                            type="text"
-                            placeholder="Search by name or email"
-                        />
+                        <label class="mb-2 block text-sm font-medium text-foreground">Borrower Name</label>
+                        <Input v-model="searchForm.search" @input="debounceSearch" placeholder="Search by name..." />
                     </div>
 
-                    <!-- Search Book Title -->
                     <div class="md:col-span-2">
-                        <label class="mb-2 block text-sm font-medium text-foreground">
-                            Book Title
-                        </label>
-                        <Input
-                            v-model="searchForm.book_search"
-                            @input="debounceSearch"
-                            type="text"
-                            placeholder="Search by title or author"
-                        />
+                        <label class="mb-2 block text-sm font-medium text-foreground">Book Title</label>
+                        <Input v-model="searchForm.book_search" @input="debounceSearch"
+                            placeholder="Search by title..." />
                     </div>
 
-                    <!-- Status Filter -->
-                    <div>
-                        <label class="mb-2 block text-sm font-medium text-foreground">
-                            Status
-                        </label>
+                    <div class="md:col-span-1">
+                        <label class="mb-2 block text-sm font-medium text-foreground">Status</label>
                         <Select v-model="searchForm.status" @update:model-value="search">
                             <SelectTrigger>
-                                <SelectValue placeholder="All Statuses" />
+                                <SelectValue placeholder="All" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="all">All Statuses</SelectItem>
+                                <SelectItem value="all">All</SelectItem>
                                 <SelectItem value="active">Active</SelectItem>
-                                <SelectItem value="overdue">Overdue</SelectItem>
-                                <SelectItem value="returned">Returned</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
 
-                    <!-- Clear Filters Button -->
-                    <div class="flex items-end">
+                    <div class="md:col-span-1">
                         <Button @click="clearFilters" class="w-full">
-                            Clear Filters
+                            Clear
                         </Button>
                     </div>
                 </div>
@@ -242,8 +223,10 @@ const getDaysUntilDue = (dueDate: string, returnedDate: string | null): string =
                 <CardContent class="p-0">
                     <!-- Empty State -->
                     <div v-if="loans.data.length === 0" class="py-12 text-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-12 w-12 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                        <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-12 w-12 text-muted-foreground"
+                            fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                         </svg>
                         <h3 class="mt-4 text-sm font-medium text-foreground">
                             No loans found
@@ -309,7 +292,8 @@ const getDaysUntilDue = (dueDate: string, returnedDate: string | null): string =
                                     <!-- Due Date -->
                                     <TableCell>
                                         <div>{{ formatDate(loan.due_date) }}</div>
-                                        <div v-if="!loan.returned_date" class="text-xs" :class="getStatusBadge(loan).variant === 'destructive' ? 'text-destructive font-medium' : 'text-muted-foreground'">
+                                        <div v-if="!loan.returned_date" class="text-xs"
+                                            :class="getStatusBadge(loan).variant === 'destructive' ? 'text-destructive font-medium' : 'text-muted-foreground'">
                                             {{ getDaysUntilDue(loan.due_date, loan.returned_date) }}
                                         </div>
                                     </TableCell>
@@ -348,20 +332,13 @@ const getDaysUntilDue = (dueDate: string, returnedDate: string | null): string =
                         Showing page {{ loans.current_page }} of {{ loans.last_page }} ({{ loans.total }} total)
                     </div>
                     <div class="flex gap-2">
-                        <Link
-                            v-for="(link, index) in loans.links"
-                            :key="index"
-                            :href="link.url || '#'"
-                            :class="[
-                                'rounded-md px-3 py-2 text-sm',
-                                link.active
-                                    ? 'bg-primary text-primary-foreground'
-                                    : 'bg-muted text-foreground hover:bg-muted/80',
-                                !link.url && 'cursor-not-allowed opacity-50'
-                            ]"
-                            :disabled="!link.url"
-                            v-html="link.label"
-                        />
+                        <Link v-for="(link, index) in loans.links" :key="index" :href="link.url || '#'" :class="[
+                            'rounded-md px-3 py-2 text-sm',
+                            link.active
+                                ? 'bg-primary text-primary-foreground'
+                                : 'bg-muted text-foreground hover:bg-muted/80',
+                            !link.url && 'cursor-not-allowed opacity-50'
+                        ]" :disabled="!link.url" v-html="link.label" />
                     </div>
                 </div>
             </div>

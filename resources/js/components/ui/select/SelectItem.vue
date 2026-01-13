@@ -28,9 +28,9 @@ const forwardedProps = useForwardProps(delegatedProps)
       )
     "
   >
-    <span class="flex h-3.5 w-3.5 items-center justify-center">
+    <span class="flex h-3.5 w-3.5 items-center justify-center mr-3">
       <SelectItemIndicator>
-        <Check class="h-4 w-4" />
+        <Check class="h-4 w-4 ml-1" />
       </SelectItemIndicator>
     </span>
 
