@@ -15,7 +15,7 @@ import { dashboard } from '@/routes';
 import { type NavItem } from '@/types';
 
 import { Link, usePage } from '@inertiajs/vue3';
-import { BookOpen, Folder, LayoutGrid, Library, FileCog, Handshake } from 'lucide-vue-next';
+import { BookOpen, Folder, LayoutGrid, Library, FileCog, Handshake, CircleUserRound, ShieldUser } from 'lucide-vue-next';
 import { computed } from 'vue';
 import AppLogo from './AppLogo.vue';
 
@@ -67,6 +67,18 @@ const mainNavItems: NavItem[] = [
                 isActive: computed(() => currentUrl.value.startsWith('/genres')),
             },
         ],
+    },
+    {
+        title: 'Admins',
+        href: '/admins',
+        icon: ShieldUser,
+        isActive: computed(() => currentUrl.value.startsWith('/admins')),
+    },
+    {
+        title: 'Members',
+        href: '/members',
+        icon: CircleUserRound,
+        isActive: computed(() => currentUrl.value.startsWith('/members')),
     },
 ];
 

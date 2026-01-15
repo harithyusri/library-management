@@ -143,71 +143,69 @@ const formatBookFormat = (format: string): string => {
             </div>
 
             <!-- Filters -->
-            <div class="rounded-xl border border-border bg-background p-6">
-                <div class="grid gap-4 md:grid-cols-5">
-                    <!-- Search -->
-                    <div class="md:col-span-2">
-                        <label class="mb-1 block text-sm font-medium text-foreground">
-                            Search
-                        </label>
-                        <input v-model="searchForm.search" @input="debounceSearch" type="text"
-                            placeholder="Search by title, author, or ISBN"
-                            class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-ring focus:ring-ring" />
-                    </div>
+            <div class="grid gap-4 md:grid-cols-5">
+                <!-- Search -->
+                <div class="md:col-span-2">
+                    <label class="mb-1 block text-sm font-medium text-foreground">
+                        Search
+                    </label>
+                    <input v-model="searchForm.search" @input="debounceSearch" type="text"
+                        placeholder="Search by title, author, or ISBN"
+                        class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-ring focus:ring-ring" />
+                </div>
 
-                    <!-- Genre -->
-                    <div>
-                        <label class="mb-1 block text-sm font-medium text-foreground">
-                            Genre
-                        </label>
-                        <Select v-model="searchForm.genre" @update:model-value="search">
-                            <SelectTrigger>
-                                <SelectValue placeholder="All Genres" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">All Genres</SelectItem>
-                                <SelectItem v-for="genre in genres" :key="genre.id" :value="String(genre.id)">
-                                    {{ genre.name }}
-                                </SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
+                <!-- Genre -->
+                <div>
+                    <label class="mb-1 block text-sm font-medium text-foreground">
+                        Genre
+                    </label>
+                    <Select v-model="searchForm.genre" @update:model-value="search">
+                        <SelectTrigger>
+                            <SelectValue placeholder="All Genres" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">All Genres</SelectItem>
+                            <SelectItem v-for="genre in genres" :key="genre.id" :value="String(genre.id)">
+                                {{ genre.name }}
+                            </SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
 
-                    <!-- Category -->
-                    <div>
-                        <label class="mb-1 block text-sm font-medium text-foreground">
-                            Category
-                        </label>
-                        <Select v-model="searchForm.category" @update:model-value="search">
-                            <SelectTrigger>
-                                <SelectValue placeholder="All Categories" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">All Categories</SelectItem>
-                                <SelectItem v-for="category in categories" :key="category.id" :value="category.id">
-                                    {{ category.name }}
-                                </SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
+                <!-- Category -->
+                <div>
+                    <label class="mb-1 block text-sm font-medium text-foreground">
+                        Category
+                    </label>
+                    <Select v-model="searchForm.category" @update:model-value="search">
+                        <SelectTrigger>
+                            <SelectValue placeholder="All Categories" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">All Categories</SelectItem>
+                            <SelectItem v-for="category in categories" :key="category.id" :value="category.id">
+                                {{ category.name }}
+                            </SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
 
-                    <!-- Format -->
-                    <div>
-                        <label class="mb-1 block text-sm font-medium text-foreground">
-                            Format
-                        </label>
-                        <Select v-model="searchForm.format" @update:model-value="search">
-                            <SelectTrigger>
-                                <SelectValue placeholder="All Formats" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">All Formats</SelectItem>
-                                <SelectItem v-for="(label, key) in formatOptions" :key="key" :value="key">
-                                    {{ label }}
-                                </SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
+                <!-- Format -->
+                <div>
+                    <label class="mb-1 block text-sm font-medium text-foreground">
+                        Format
+                    </label>
+                    <Select v-model="searchForm.format" @update:model-value="search">
+                        <SelectTrigger>
+                            <SelectValue placeholder="All Formats" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">All Formats</SelectItem>
+                            <SelectItem v-for="(label, key) in formatOptions" :key="key" :value="key">
+                                {{ label }}
+                            </SelectItem>
+                        </SelectContent>
+                    </Select>
                 </div>
             </div>
 
@@ -300,7 +298,7 @@ const formatBookFormat = (format: string): string => {
             </div>
 
             <!-- Pagination -->
-            <div v-if="books.data.length" class="rounded-xl border border-border bg-background p-4">
+            <div v-if="books.data.length" class="bg-background p-4">
                 <div class="flex items-center justify-between">
                     <div class="text-sm text-muted-foreground">
                         Showing {{ books.data.length }} books
@@ -314,7 +312,6 @@ const formatBookFormat = (format: string): string => {
                     </div>
                 </div>
             </div>
-
         </div>
     </AppLayout>
 </template>

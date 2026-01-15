@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\Api\BookCopyApiController;
+
+use App\Http\Controllers\AdminController;
 use App\Http\Controllers\BookController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\GenreController;
@@ -8,11 +10,6 @@ use App\Http\Controllers\LoanController;
 use App\Http\Controllers\PublisherController;
 use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Features;
-
-// Use the Route::inertia helper for simple pages.
-// Argument 1: The URL URI
-// Argument 2: The JavaScript Page Component name
-// Argument 3 (optional): An array of props to pass to the page
 
 Route::inertia('/', 'Welcome', [
     'canRegister' => Features::enabled(Features::registration()),
@@ -71,6 +68,27 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('loans/{loan}', [LoanController::class, 'show'])->name('loans.show');
     Route::post('loans', [LoanController::class, 'store'])->name('loans.store');
     Route::put('loans/{loan}/return', [LoanController::class, 'return'])->name('loans.return');
+
+    Route::prefix('admins')->name('admins.')->group(function () {
+        Route::get('/', [AdminController::class, 'index'])->name('index');
+        Route::get('/create', [AdminController::class, 'create'])->name('create');
+        Route::post('/', [AdminController::class, 'store'])->name('store');
+        Route::get('/{user}', [AdminController::class, 'show'])->name('show');
+        Route::get('/{user}/edit', [AdminController::class, 'edit'])->name('edit');
+        Route::put('/{user}', [AdminController::class, 'update'])->name('update');
+        Route::delete('/{user}', [AdminController::class, 'destroy'])->name('destroy');
+    });
+
+    // Members
+    Route::prefix('members')->name('members.')->group(function () {
+        Route::get('/', [MemberController::class, 'index'])->name('index');
+        Route::get('/create', [MemberController::class, 'create'])->name('create');
+        Route::post('/', [MemberController::class, 'store'])->name('store');
+        Route::get('/{user}', [MemberController::class, 'show'])->name('show');
+        Route::get('/{user}/edit', [MemberController::class, 'edit'])->name('edit');
+        Route::put('/{user}', [MemberController::class, 'update'])->name('update');
+        Route::delete('/{user}', [MemberController::class, 'destroy'])->name('destroy');
+    });
 });
 
 // API routes for book copy search

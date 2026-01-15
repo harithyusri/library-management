@@ -34,11 +34,11 @@ class LoanController extends Controller
 
         // Filter by status
         if ($request->has('status') && $request->status !== 'all') {
-            if ($request->status === 'active') {
+            if ($request->status === Loan::STATUS_ACTIVE) {
                 $query->whereNull('returned_date');
-            } elseif ($request->status === 'returned') {
+            } elseif ($request->status === Loan::STATUS_RETURNED) {
                 $query->whereNotNull('returned_date');
-            } elseif ($request->status === 'overdue') {
+            } elseif ($request->status === Loan::STATUS_OVERDUE) {
                 $query->whereNull('returned_date')
                     ->where('due_date', '<', now());
             }
@@ -54,6 +54,7 @@ class LoanController extends Controller
         return Inertia::render('Loans/Index', [
             'loans' => $loans,
             'filters' => $request->only(['search', 'book_search', 'status', 'sort_by', 'sort_order']),
+            'statuses' => Loan::getStatuses(),
         ]);
     }
 

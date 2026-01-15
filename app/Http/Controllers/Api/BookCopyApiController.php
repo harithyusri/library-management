@@ -19,14 +19,14 @@ class BookCopyApiController extends Controller
             return response()->json(['data' => []]);
         }
 
+        // FIXED: Put all search conditions inside one where() group
         $copies = BookCopy::with('book:id,title,author_name,isbn')
-            ->where('status', 'available')
+            ->where('status', 'available') // First filter: only available
             ->where(function ($q) use ($query) {
-                // Search by barcode
+                // Then search in ANY of these fields
                 $q->where('barcode', 'like', "%{$query}%")
-                  // Search by call number
                   ->orWhere('call_number', 'like', "%{$query}%")
-                  // Search by book title
+                  // OR search in book relationship
                   ->orWhereHas('book', function ($bookQuery) use ($query) {
                       $bookQuery->where('title', 'like', "%{$query}%")
                                 ->orWhere('author_name', 'like', "%{$query}%")

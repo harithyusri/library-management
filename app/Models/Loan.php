@@ -30,6 +30,19 @@ class Loan extends Model
         'fine_paid' => 'boolean',
     ];
 
+    public const STATUS_ACTIVE = 'active';
+    public const STATUS_RETURNED = 'returned';
+    public const STATUS_OVERDUE = 'overdue';
+
+    public static function getStatuses(): array
+    {
+        return [
+            self::STATUS_ACTIVE => 'Active',
+            self::STATUS_OVERDUE => 'Overdue',
+            self::STATUS_RETURNED => 'Returned',
+        ];
+    }
+
     /**
      * Get the book copy that was loaned.
      */
