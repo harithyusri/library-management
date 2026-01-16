@@ -2,11 +2,12 @@
 
 use App\Http\Controllers\Api\BookCopyApiController;
 
-use App\Http\Controllers\AdminController;
+use App\Http\Controllers\StaffController;
 use App\Http\Controllers\BookController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\GenreController;
 use App\Http\Controllers\LoanController;
+use App\Http\Controllers\MemberController;
 use App\Http\Controllers\PublisherController;
 use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Features;
@@ -70,13 +71,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::put('loans/{loan}/return', [LoanController::class, 'return'])->name('loans.return');
 
     Route::prefix('admins')->name('admins.')->group(function () {
-        Route::get('/', [AdminController::class, 'index'])->name('index');
-        Route::get('/create', [AdminController::class, 'create'])->name('create');
-        Route::post('/', [AdminController::class, 'store'])->name('store');
-        Route::get('/{user}', [AdminController::class, 'show'])->name('show');
-        Route::get('/{user}/edit', [AdminController::class, 'edit'])->name('edit');
-        Route::put('/{user}', [AdminController::class, 'update'])->name('update');
-        Route::delete('/{user}', [AdminController::class, 'destroy'])->name('destroy');
+        Route::get('/', [StaffController::class, 'index'])->name('index');
+        Route::get('/create', [StaffController::class, 'create'])->name('create');
+        Route::post('/', [StaffController::class, 'store'])->name('store');
+        Route::get('/{user}', [StaffController::class, 'show'])->name('show');
+        Route::get('/{user}/edit', [StaffController::class, 'edit'])->name('edit');
+        Route::put('/{user}', [StaffController::class, 'update'])->name('update');
+        Route::delete('/{user}', [StaffController::class, 'destroy'])->name('destroy');
     });
 
     // Members
