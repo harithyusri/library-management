@@ -27,7 +27,7 @@ import {
 const breadcrumbs: BreadcrumbItem[] = [
     {
         title: 'Admins & Staff',
-        href: route('admins.index'),
+        href: route('staffs.index'),
     },
 ];
 
@@ -62,7 +62,7 @@ interface PaginatedAdmins {
    Props
 ========================= */
 const props = defineProps<{
-    admins: PaginatedAdmins;
+    staffs: PaginatedAdmins;
     filters: Record<string, any>;
     can: Record<string, boolean>;
 }>();
@@ -93,7 +93,7 @@ const debounceSearch = () => {
 };
 
 const search = () => {
-    router.get(route('admins.index'), searchForm, {
+    router.get(route('staffs.index'), searchForm, {
         preserveScroll: true,
         preserveState: true,
     });
@@ -114,7 +114,7 @@ const confirmDelete = (admin: Admin) => {
 const deleteAdmin = () => {
     if (!adminToDelete.value) return;
 
-    router.delete(route('admins.destroy', adminToDelete.value.id), {
+    router.delete(route('staffs.destroy', adminToDelete.value.id), {
         preserveScroll: true,
         onSuccess: () => {
             showDeleteDialog.value = false;
@@ -184,7 +184,7 @@ const formatDate = (date: string): string => {
                     </p>
                 </div>
 
-                <Link v-if="can.createUsers" :href="route('admins.create')">
+                <Link v-if="can.createUsers" :href="route('staffs.create')">
                     <Button>
                         <UserPlusIcon class="mr-2 h-4 w-4" />
                         Add Staff
@@ -249,7 +249,7 @@ const formatDate = (date: string): string => {
             <Card>
                 <CardContent class="p-0">
                     <!-- Empty State -->
-                    <div v-if="admins.data.length === 0" class="py-12 text-center">
+                    <div v-if="staffs.data.length === 0" class="py-12 text-center">
                         <ShieldIcon class="mx-auto h-12 w-12 text-muted-foreground" />
                         <h3 class="mt-4 text-sm font-medium text-foreground">
                             No staff found
@@ -261,7 +261,7 @@ const formatDate = (date: string): string => {
                             <Button variant="outline" @click="clearFilters">
                                 Clear Filters
                             </Button>
-                            <Link v-if="can.createUsers" :href="route('admins.create')">
+                            <Link v-if="can.createUsers" :href="route('staffs.create')">
                                 <Button>
                                     <UserPlusIcon class="mr-2 h-4 w-4" />
                                     Add Staff
@@ -285,7 +285,7 @@ const formatDate = (date: string): string => {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                <TableRow v-for="admin in admins.data" :key="admin.id">
+                                <TableRow v-for="admin in staffs.data" :key="admin.id">
                                     <!-- Name -->
                                     <TableCell>
                                         <div class="font-medium">{{ admin.name }}</div>
@@ -331,12 +331,12 @@ const formatDate = (date: string): string => {
                                     <!-- Actions -->
                                     <TableCell class="text-right">
                                         <div class="flex justify-end gap-2">
-                                            <Link :href="route('admins.show', admin.id)">
+                                            <Link :href="route('staffs.show', admin.id)">
                                                 <Button variant="ghost" size="sm">
                                                     View
                                                 </Button>
                                             </Link>
-                                            <Link v-if="can.editUsers" :href="route('admins.edit', admin.id)">
+                                            <Link v-if="can.editUsers" :href="route('staffs.edit', admin.id)">
                                                 <Button variant="ghost" size="sm">
                                                     <EditIcon class="h-4 w-4" />
                                                 </Button>
@@ -359,14 +359,14 @@ const formatDate = (date: string): string => {
             </Card>
 
             <!-- Pagination -->
-            <div v-if="admins.last_page > 1" class="rounded-xl border border-border bg-background p-4">
+            <div v-if="staffs.last_page > 1" class="rounded-xl border border-border bg-background p-4">
                 <div class="flex items-center justify-between">
                     <div class="text-sm text-muted-foreground">
-                        Showing page {{ admins.current_page }} of {{ admins.last_page }} ({{ admins.total }} total)
+                        Showing page {{ staffs.current_page }} of {{ staffs.last_page }} ({{ staffs.total }} total)
                     </div>
                     <div class="flex gap-2">
                         <Link
-                            v-for="(link, index) in admins.links"
+                            v-for="(link, index) in staffs.links"
                             :key="index"
                             :href="link.url || '#'"
                             :class="[

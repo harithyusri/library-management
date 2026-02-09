@@ -184,35 +184,53 @@ const cancel = () => {
 </script>
 
 <template>
-
     <Head title="Loan Details" />
 
     <AppLayout :breadcrumbs="breadcrumbs">
-        <div class="flex flex-1 flex-col gap-6 overflow-x-auto p-4 md:p-6">
+        <div class="px-4 py-8 space-y-8">
 
             <FlashAlert />
 
             <!-- Header -->
-            <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                <div>
-                    <h1 class="text-2xl font-bold text-foreground">
-                        Loan Details
+            <div class="flex items-start justify-between">
+                <div class="space-y-1">
+                    <h1 class="text-xl font-semibold">
+                        Loan #{{ loan.id }}
                     </h1>
-                    <p class="mt-1 text-sm text-muted-foreground">
-                        Loan ID: #{{ loan.id }}
-                    </p>
+
+                    <div class="flex items-center gap-2 text-sm">
+                        <!-- Status dot -->
+                        <span
+                            class="h-2.5 w-2.5 rounded-full"
+                            :class="{
+                                'bg-green-500': statusInfo.label === 'Active',
+                                'bg-red-500': statusInfo.label === 'Overdue',
+                                'bg-gray-400': statusInfo.label === 'Returned',
+                            }"
+                        />
+
+                        <span class="text-muted-foreground">
+                            {{ statusInfo.label }}
+                        </span>
+
+                        <span v-if="daysUntilDue !== null" class="text-muted-foreground">
+                            ·
+                            <span :class="daysUntilDue < 0 ? 'text-destructive font-medium' : ''">
+                                {{ Math.abs(daysUntilDue) }} days
+                                {{ daysUntilDue < 0 ? 'overdue' : 'left' }}
+                            </span>
+                        </span>
+                    </div>
                 </div>
 
-                <div class="flex flex-wrap gap-2">
-                    <!-- Return Book Button (only for active loans) -->
+                <div class="flex gap-2">
                     <Dialog v-if="!loan.returned_date" v-model:open="showReturnDialog">
                         <DialogTrigger as-child>
-                            <Button>
-                                <CheckCircleIcon class="mr-2 h-4 w-4" />
-                                Return Book
+                            <Button size="sm">
+                                Return
                             </Button>
                         </DialogTrigger>
-                        <DialogContent class="sm:max-w-[425px]">
+                        <DialogContent>
                             <DialogHeader>
                                 <DialogTitle>Return Book</DialogTitle>
                                 <DialogDescription>
@@ -269,263 +287,107 @@ const cancel = () => {
                     </Dialog>
 
                     <Link :href="route('loans.index')">
-                        <Button variant="outline">
-                            Back to List
-                        </Button>
+                        <Button variant="ghost" size="sm">Back</Button>
                     </Link>
                 </div>
             </div>
 
-            <!-- Status Card - Redesigned -->
-            <Card :class="cn('border', statusInfo.bgClass)">
-                <CardContent class="px-6">
-                    <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                        <!-- Status Info -->
-                        <div class="flex items-center gap-4">
-                            <div :class="cn('flex h-12 w-12 items-center justify-center rounded-full bg-white/60 border', statusInfo.iconClass)">
-                                <component :is="statusInfo.icon" class="h-6 w-6" />
-                            </div>
-                            <div>
-                                <p class="text-xs font-medium uppercase tracking-wide" :class="statusInfo.textClass">
-                                    Loan Status
-                                </p>
-                                <p class="text-xl font-bold mt-0.5" :class="statusInfo.textClass">
-                                    {{ statusInfo.label }}
-                                </p>
-                            </div>
-                        </div>
+            <Separator />
 
-                        <!-- Due Date Info -->
-                        <div v-if="daysUntilDue !== null" class="flex items-center gap-3 sm:text-right">
-                            <div class="hidden sm:block">
-                                <p class="text-xs font-medium" :class="statusInfo.textClass">
-                                    {{ daysUntilDue < 0 ? 'Overdue by' : 'Due in' }}
-                                </p>
-                                <p class="text-base font-semibold mt-0.5" :class="statusInfo.textClass">
-                                    {{ Math.abs(daysUntilDue) }} {{ Math.abs(daysUntilDue) === 1 ? 'day' : 'days' }}
-                                </p>
-                            </div>
-                            <Badge :variant="daysUntilDue < 0 ? 'destructive' : 'secondary'" class="sm:hidden">
-                                {{ daysUntilDue < 0 ? 'Overdue by' : 'Due in' }} {{ Math.abs(daysUntilDue) }} {{ Math.abs(daysUntilDue) === 1 ? 'day' : 'days' }}
-                            </Badge>
-                        </div>
+            <!-- Book -->
+            <div class="flex items-start gap-4">
+                <div class="h-24 w-16 flex-shrink-0 overflow-hidden rounded border bg-muted">
+                    <img
+                        v-if="loan.book_copy.book.cover_image_url"
+                        :src="loan.book_copy.book.cover_image_url"
+                        class="h-full w-full object-cover"
+                    />
+                    <div v-else class="flex h-full items-center justify-center">
+                        <BookOpenIcon class="h-6 w-6 text-muted-foreground/40" />
                     </div>
-                </CardContent>
-            </Card>
-
-            <!-- Main Content Grid -->
-            <div class="grid gap-6 lg:grid-cols-5">
-
-                <!-- Left Column - Book Information -->
-                <div class="lg:col-span-2">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle class="flex items-center gap-2 text-lg">
-                                <BookOpenIcon class="h-5 w-5" />
-                                Book Information
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent class="space-y-4">
-                            <!-- Book Cover -->
-                            <div class="aspect-[2/3] overflow-hidden rounded-lg bg-muted border">
-                                <img v-if="loan.book_copy.book.cover_image_url"
-                                    :src="loan.book_copy.book.cover_image_url" :alt="loan.book_copy.book.title"
-                                    class="h-full w-full object-cover" />
-                                <div v-else class="flex h-full w-full items-center justify-center">
-                                    <BookOpenIcon class="h-16 w-16 text-muted-foreground/30" />
-                                </div>
-                            </div>
-
-                            <!-- Book Details -->
-                            <div>
-                                <h3 class="font-semibold text-base text-foreground leading-tight">
-                                    {{ loan.book_copy.book.title }}
-                                </h3>
-                                <p class="text-sm text-muted-foreground mt-1">
-                                    by {{ loan.book_copy.book.author_name }}
-                                </p>
-                            </div>
-
-                            <Separator />
-
-                            <!-- Copy Details -->
-                            <div class="space-y-3">
-                                <div>
-                                    <p class="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Barcode</p>
-                                    <code class="text-sm font-mono bg-muted px-2 py-1 rounded">{{ loan.book_copy.barcode }}</code>
-                                </div>
-
-                                <div v-if="loan.book_copy.call_number">
-                                    <p class="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Call Number</p>
-                                    <p class="text-sm font-medium">{{ loan.book_copy.call_number }}</p>
-                                </div>
-
-                                <div v-if="loan.book_copy.book.isbn">
-                                    <p class="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">ISBN</p>
-                                    <code class="text-sm font-mono bg-muted px-2 py-1 rounded">{{ loan.book_copy.book.isbn }}</code>
-                                </div>
-
-                                <div>
-                                    <p class="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Condition</p>
-                                    <Badge variant="outline" class="capitalize">{{ loan.book_copy.condition }}</Badge>
-                                </div>
-
-                                <div v-if="loan.book_copy.location">
-                                    <p class="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Location</p>
-                                    <p class="text-sm font-medium">{{ loan.book_copy.location }}</p>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
                 </div>
 
-                <!-- Right Column - Loan Details -->
-                <div class="lg:col-span-2 space-y-6">
+                <div class="space-y-1">
+                    <p class="font-medium leading-tight text-foreground">
+                        {{ loan.book_copy.book.title }}
+                    </p>
 
-                    <!-- Borrower Information -->
-                    <Card>
-                        <CardHeader>
-                            <CardTitle class="flex items-center gap-2 text-lg">
-                                <UserIcon class="h-5 w-5" />
-                                Borrower Information
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div class="flex items-center gap-4 p-4 rounded-lg bg-muted/50 border">
-                                <div class="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 border">
-                                    <UserIcon class="h-6 w-6 text-primary" />
-                                </div>
-                                <div class="flex-1 min-w-0">
-                                    <p class="font-semibold text-foreground truncate">{{ loan.user.name }}</p>
-                                    <p class="text-sm text-muted-foreground truncate">{{ loan.user.email }}</p>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
+                    <p class="text-sm text-muted-foreground">
+                        {{ loan.book_copy.book.author_name }}
+                    </p>
 
-                    <!-- Loan Timeline -->
-                    <Card>
-                        <CardHeader>
-                            <CardTitle class="flex items-center gap-2 text-lg">
-                                <CalendarIcon class="h-5 w-5" />
-                                Loan Timeline
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div class="space-y-4">
-                                <!-- Borrowed Date -->
-                                <div class="flex items-start gap-4">
-                                    <div class="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 border border-blue-200 flex-shrink-0">
-                                        <CalendarIcon class="h-5 w-5 text-blue-600" />
-                                    </div>
-                                    <div class="flex-1 pt-1">
-                                        <p class="text-sm font-semibold text-foreground">Borrowed</p>
-                                        <p class="text-sm text-muted-foreground mt-0.5">
-                                            {{ formatShortDate(loan.borrowed_date) }}
-                                        </p>
-                                    </div>
-                                </div>
+                    <p class="text-xs text-muted-foreground pt-1">
+                        <span class="font-mono">{{ loan.book_copy.barcode }}</span>
+                        <span v-if="loan.book_copy.call_number">
+                            · {{ loan.book_copy.call_number }}
+                        </span>
+                        · <span class="capitalize">{{ loan.book_copy.condition }}</span>
+                    </p>
+                </div>
+            </div>
 
-                                <!-- Due Date -->
-                                <div class="flex items-start gap-4">
-                                    <div :class="cn(
-                                        'flex h-10 w-10 items-center justify-center rounded-full border flex-shrink-0',
-                                        isOverdue ? 'bg-red-100 border-red-200' : 'bg-orange-100 border-orange-200'
-                                    )">
-                                        <ClockIcon :class="cn(
-                                            'h-5 w-5',
-                                            isOverdue ? 'text-red-600' : 'text-orange-600'
-                                        )" />
-                                    </div>
-                                    <div class="flex-1 pt-1">
-                                        <div class="flex items-baseline gap-2 flex-wrap">
-                                            <p class="text-sm font-semibold text-foreground">Due Date</p>
-                                            <Badge v-if="isOverdue" variant="destructive" class="text-xs">
-                                                {{ Math.abs(daysUntilDue!) }} days overdue
-                                            </Badge>
-                                        </div>
-                                        <p :class="cn(
-                                            'text-sm mt-0.5',
-                                            isOverdue ? 'text-red-600 font-medium' : 'text-muted-foreground'
-                                        )">
-                                            {{ formatShortDate(loan.due_date) }}
-                                        </p>
-                                    </div>
-                                </div>
+            <Separator />
 
-                                <!-- Returned Date -->
-                                <div v-if="loan.returned_date" class="flex items-start gap-4">
-                                    <div class="flex h-10 w-10 items-center justify-center rounded-full bg-green-100 border border-green-200 flex-shrink-0">
-                                        <CheckCircleIcon class="h-5 w-5 text-green-600" />
-                                    </div>
-                                    <div class="flex-1 pt-1">
-                                        <p class="text-sm font-semibold text-foreground">Returned</p>
-                                        <p class="text-sm text-muted-foreground mt-0.5">
-                                            {{ formatShortDate(loan.returned_date) }}
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
+            <!-- Borrower -->
+            <div class="space-y-1">
+                <p class="text-xs uppercase tracking-wide text-muted-foreground">
+                    Borrower
+                </p>
 
-                    <!-- Fine Information -->
-                    <Card v-if="loan.fine_amount && loan.fine_amount > 0">
-                        <CardHeader>
-                            <CardTitle class="flex items-center gap-2 text-lg">
-                                <DollarSignIcon class="h-5 w-5" />
-                                Fine Information
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div class="p-4 rounded-lg bg-red-50 border border-red-200">
-                                <div class="flex items-center justify-between flex-wrap gap-3">
-                                    <div>
-                                        <p class="text-xs font-semibold text-red-900/60 uppercase tracking-wide">Outstanding Fine</p>
-                                        <p class="text-2xl font-bold text-red-700 mt-1">
-                                            {{ formatCurrency(loan.fine_amount) }}
-                                        </p>
-                                    </div>
-                                    <Badge :variant="loan.fine_paid ? 'secondary' : 'destructive'" class="text-xs">
-                                        {{ loan.fine_paid ? 'Paid' : 'Unpaid' }}
-                                    </Badge>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
+                <p class="font-medium text-foreground">
+                    {{ loan.user.name }}
+                </p>
 
-                    <!-- Notes -->
-                    <Card v-if="loan.notes">
-                        <CardHeader>
-                            <CardTitle class="text-lg">Notes</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div class="p-4 rounded-lg bg-muted/50 border">
-                                <p class="text-sm text-foreground whitespace-pre-wrap leading-relaxed">{{ loan.notes }}</p>
-                            </div>
-                        </CardContent>
-                    </Card>
+                <p class="text-sm text-muted-foreground">
+                    {{ loan.user.email }}
+                </p>
+            </div>
 
-                    <!-- Librarian Info -->
-                    <Card v-if="loan.librarian">
-                        <CardHeader>
-                            <CardTitle class="text-lg">Issued By</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div class="flex items-center gap-4 p-4 rounded-lg bg-muted/50 border">
-                                <div class="flex h-10 w-10 items-center justify-center rounded-full bg-muted border flex-shrink-0">
-                                    <UserIcon class="h-5 w-5 text-muted-foreground" />
-                                </div>
-                                <div class="flex-1 min-w-0">
-                                    <p class="font-semibold text-foreground truncate">{{ loan.librarian.name }}</p>
-                                    <p class="text-sm text-muted-foreground truncate">{{ loan.librarian.email }}</p>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-
+            <!-- Dates -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                <div>
+                    <p class="text-xs text-muted-foreground">Borrowed</p>
+                    <p class="text-foreground">
+                        {{ formatShortDate(loan.borrowed_date) }}
+                    </p>
                 </div>
 
+                <div>
+                    <p class="text-xs text-muted-foreground">Due</p>
+                    <p
+                        :class="isOverdue
+                            ? 'text-destructive font-medium'
+                            : 'text-foreground'
+                        "
+                    >
+                        {{ formatShortDate(loan.due_date) }}
+                    </p>
+                </div>
+
+                <div v-if="loan.returned_date">
+                    <p class="text-xs text-muted-foreground">Returned</p>
+                    <p class="text-foreground">
+                        {{ formatShortDate(loan.returned_date) }}
+                    </p>
+                </div>
+
+                <div v-if="loan.fine_amount">
+                    <p class="text-xs text-muted-foreground">Fine</p>
+                    <p class="font-medium text-destructive">
+                        {{ formatCurrency(loan.fine_amount) }}
+                    </p>
+                </div>
+            </div>
+
+            <!-- Notes -->
+            <div v-if="loan.notes" class="space-y-1">
+                <p class="text-xs uppercase tracking-wide text-muted-foreground">
+                    Notes
+                </p>
+
+                <p class="text-sm text-foreground whitespace-pre-wrap">
+                    {{ loan.notes }}
+                </p>
             </div>
 
         </div>

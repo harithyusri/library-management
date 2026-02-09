@@ -49,27 +49,27 @@ class StaffController extends Controller
             $query->where('status', $request->status);
         }
 
-        // Filter by department
-        if ($request->has('department') && $request->department !== 'all') {
-            $query->whereHas('staff', function ($q) use ($request) {
-                $q->where('department', $request->department);
-            });
-        }
+        // // Filter by department
+        // if ($request->has('department') && $request->department !== 'all') {
+        //     $query->whereHas('staff', function ($q) use ($request) {
+        //         $q->where('department', $request->department);
+        //     });
+        // }
 
         $query->orderBy('created_at', 'desc');
 
-        $admins = $query->paginate(15)->withQueryString();
+        $staffs = $query->paginate(15)->withQueryString();
 
-        // Get unique departments for filter
-        $departments = Staff::select('department')
-            ->distinct()
-            ->whereNotNull('department')
-            ->pluck('department')
-            ->toArray();
+        // // Get unique departments for filter
+        // $departments = Staff::select('department')
+        //     ->distinct()
+        //     ->whereNotNull('department')
+        //     ->pluck('department')
+        //     ->toArray();
 
-        return Inertia::render('Admins/Index', [
-            'admins' => $admins,
-            'departments' => $departments,
+        return Inertia::render('Staffs/Index', [
+            'staffs' => $staffs,
+            // 'departments' => $departments,
             'filters' => $request->only(['search', 'role', 'status', 'department']),
             'can' => [
                 'createUsers' => $request->user()->can('create users'),
@@ -98,7 +98,7 @@ class StaffController extends Controller
             ->pluck('department')
             ->toArray();
 
-        return Inertia::render('Admins/Create', [
+        return Inertia::render('Staffs/Create', [
             'roles' => $roles,
             'departments' => $departments,
         ]);
@@ -186,7 +186,7 @@ class StaffController extends Controller
 
         $user->load(['roles', 'staff', 'staff.issuedLoans', 'staff.returnedLoans']);
 
-        return Inertia::render('Admins/Show', [
+        return Inertia::render('Staffs/Show', [
             'user' => $user,
             'staffProfile' => $user->staff,
             'stats' => [
@@ -220,18 +220,10 @@ class StaffController extends Controller
         $user->load(['roles', 'staff']);
         $roles = Role::whereIn('name', ['super-admin', 'admin', 'librarian'])->get();
 
-        // Get unique departments for suggestions
-        $departments = Staff::select('department')
-            ->distinct()
-            ->whereNotNull('department')
-            ->pluck('department')
-            ->toArray();
-
-        return Inertia::render('Admins/Edit', [
-            'user' => $user,
+        return Inertia::render('Staffs/Edit', [
+            'staff' => $user,
             'staffProfile' => $user->staff,
             'roles' => $roles,
-            'departments' => $departments,
         ]);
     }
 

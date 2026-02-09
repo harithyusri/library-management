@@ -1,110 +1,287 @@
 <script setup lang="ts">
-import InputError from '@/components/InputError.vue';
-import TextLink from '@/components/TextLink.vue';
+import { route } from "ziggy-js";
+import { useForm, Head, Link } from '@inertiajs/vue3';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Spinner } from '@/components/ui/spinner';
-import AuthBase from '@/layouts/AuthLayout.vue';
-import { register } from '@/routes';
-import { store } from '@/routes/login';
-import { request } from '@/routes/password';
-import { Form, Head } from '@inertiajs/vue3';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { BookOpenIcon, LibraryIcon, BookmarkIcon, GraduationCapIcon, MailIcon, LockIcon } from 'lucide-vue-next';
 
 defineProps<{
     status?: string;
     canResetPassword: boolean;
-    canRegister: boolean;
 }>();
+
+const form = useForm({
+    email: '',
+    password: '',
+    remember: false,
+});
+
+const submit = () => {
+    form.post(route('login'), {
+        onFinish: () => form.reset('password'),
+    });
+};
 </script>
 
 <template>
-    <AuthBase
-        title="Log in to your account"
-        description="Enter your email and password below to log in"
-    >
-        <Head title="Log in" />
+    <Head title="Login" />
 
-        <div
-            v-if="status"
-            class="mb-4 text-center text-sm font-medium text-green-600"
-        >
-            {{ status }}
+    <div class="min-h-screen flex">
+        <!-- Left Side - Library Theme -->
+        <div class="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-amber-800 via-orange-700 to-rose-800 p-12 flex-col justify-between text-white relative overflow-hidden">
+            <!-- Decorative book pattern -->
+            <div class="absolute inset-0 opacity-10">
+                <div class="absolute top-10 left-10 w-32 h-40 border-4 border-white rounded-sm transform rotate-12"></div>
+                <div class="absolute top-40 right-20 w-28 h-36 border-4 border-white rounded-sm transform -rotate-6"></div>
+                <div class="absolute bottom-20 left-32 w-36 h-44 border-4 border-white rounded-sm transform rotate-3"></div>
+                <div class="absolute bottom-40 right-10 w-24 h-32 border-4 border-white rounded-sm transform -rotate-12"></div>
+            </div>
+            
+            <div class="relative z-10">
+                <div class="flex items-center gap-3">
+                    <div class="p-2 bg-white/20 backdrop-blur-sm rounded-lg border-2 border-white/30">
+                        <LibraryIcon class="h-8 w-8" />
+                    </div>
+                    <div>
+                        <div class="text-2xl font-bold">City Library</div>
+                        <div class="text-sm text-white/80">Knowledge Hub</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="space-y-8 relative z-10">
+                <div class="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm rounded-full px-4 py-2 border border-white/30">
+                    <BookmarkIcon class="h-4 w-4" />
+                    <span class="text-sm font-medium">Where Stories Come Alive</span>
+                </div>
+
+                <h1 class="text-5xl font-bold leading-tight">
+                    A World of<br />
+                    Knowledge<br />
+                    Awaits You
+                </h1>
+                
+                <p class="text-xl text-white/90 max-w-md">
+                    Access thousands of books, connect with fellow readers, and discover your next favorite story.
+                </p>
+
+                <!-- Library Stats -->
+                <div class="grid grid-cols-3 gap-4 mt-12">
+                    <div class="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
+                        <BookOpenIcon class="h-6 w-6 mb-2" />
+                        <div class="text-2xl font-bold">12K+</div>
+                        <div class="text-xs text-white/80 mt-1">Books</div>
+                    </div>
+                    <div class="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
+                        <LibraryIcon class="h-6 w-6 mb-2" />
+                        <div class="text-2xl font-bold">850+</div>
+                        <div class="text-xs text-white/80 mt-1">Active Members</div>
+                    </div>
+                    <div class="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
+                        <GraduationCapIcon class="h-6 w-6 mb-2" />
+                        <div class="text-2xl font-bold">50+</div>
+                        <div class="text-xs text-white/80 mt-1">Categories</div>
+                    </div>
+                </div>
+
+                <!-- Features -->
+                <div class="space-y-3 mt-8">
+                    <div class="flex items-center gap-3 bg-white/5 backdrop-blur-sm rounded-lg p-3 border border-white/10">
+                        <div class="p-2 bg-amber-600/50 rounded-lg">
+                            <BookOpenIcon class="h-5 w-5" />
+                        </div>
+                        <div>
+                            <div class="font-semibold text-sm">Extensive Collection</div>
+                            <div class="text-xs text-white/70">Fiction, Non-fiction, Academic & More</div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3 bg-white/5 backdrop-blur-sm rounded-lg p-3 border border-white/10">
+                        <div class="p-2 bg-orange-600/50 rounded-lg">
+                            <BookmarkIcon class="h-5 w-5" />
+                        </div>
+                        <div>
+                            <div class="font-semibold text-sm">Easy Borrowing</div>
+                            <div class="text-xs text-white/70">Simple checkout & renewal process</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="text-sm text-white/60 relative z-10">
+                © 2026 City Library. Enriching minds since 1950.
+            </div>
         </div>
 
-        <Form
-            v-bind="store.form()"
-            :reset-on-success="['password']"
-            v-slot="{ errors, processing }"
-            class="flex flex-col gap-6"
-        >
-            <div class="grid gap-6">
-                <div class="grid gap-2">
-                    <Label for="email">Email address</Label>
-                    <Input
-                        id="email"
-                        type="email"
-                        name="email"
-                        required
-                        autofocus
-                        :tabindex="1"
-                        autocomplete="email"
-                        placeholder="email@example.com"
-                    />
-                    <InputError :message="errors.email" />
-                </div>
-
-                <div class="grid gap-2">
-                    <div class="flex items-center justify-between">
-                        <Label for="password">Password</Label>
-                        <TextLink
-                            v-if="canResetPassword"
-                            :href="request()"
-                            class="text-sm"
-                            :tabindex="5"
-                        >
-                            Forgot password?
-                        </TextLink>
+        <!-- Right Side - Login Form -->
+        <div class="flex-1 flex items-center justify-center p-8">
+            <div class="w-full max-w-md">
+                <!-- Mobile Logo -->
+                <div class="flex lg:hidden items-center justify-center gap-3 mb-8">
+                    <div class="p-2 bg-gradient-to-br from-amber-700 to-orange-700 rounded-lg">
+                        <LibraryIcon class="h-6 w-6 text-white" />
                     </div>
-                    <Input
-                        id="password"
-                        type="password"
-                        name="password"
-                        required
-                        :tabindex="2"
-                        autocomplete="current-password"
-                        placeholder="Password"
-                    />
-                    <InputError :message="errors.password" />
+                    <div>
+                        <div class="text-xl font-bold text-amber-900 dark:text-amber-100">City Library</div>
+                        <div class="text-xs text-amber-700 dark:text-amber-400">Knowledge Hub</div>
+                    </div>
                 </div>
 
-                <div class="flex items-center justify-between">
-                    <Label for="remember" class="flex items-center space-x-3">
-                        <Checkbox id="remember" name="remember" :tabindex="3" />
-                        <span>Remember me</span>
-                    </Label>
+                <Card class="border-2 border-amber-200/50 dark:border-amber-900/50 shadow-xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm">
+                    <CardHeader class="space-y-2 text-center pb-6">
+                        <!-- <div class="mx-auto w-16 h-16 bg-gradient-to-br from-amber-700 to-orange-700 rounded-xl flex items-center justify-center mb-2 shadow-lg">
+                            <BookOpenIcon class="h-8 w-8 text-white" />
+                        </div> -->
+                        <CardTitle class="text-3xl font-bold text-amber-900 dark:text-amber-100 mt-6">
+                            Welcome Back
+                        </CardTitle>
+                        <CardDescription class="text-base text-amber-700 dark:text-amber-400">
+                            Sign in to access your library account
+                        </CardDescription>
+                    </CardHeader>
+
+                    <CardContent>
+                        <!-- Status Message -->
+                        <div
+                            v-if="status"
+                            class="mb-6 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 border-2 border-emerald-200 dark:border-emerald-800 p-4 text-sm text-emerald-700 dark:text-emerald-400 flex items-center gap-2"
+                        >
+                            <BookmarkIcon class="h-4 w-4" />
+                            {{ status }}
+                        </div>
+
+                        <form @submit.prevent="submit" class="space-y-5">
+                            <!-- Email -->
+                            <div class="space-y-2">
+                                <Label for="email" class="text-sm font-semibold text-amber-900 dark:text-amber-100">
+                                    Email Address
+                                </Label>
+                                <div class="relative">
+                                    <MailIcon class="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-amber-600 dark:text-amber-500" />
+                                    <Input
+                                        id="email"
+                                        v-model="form.email"
+                                        type="email"
+                                        placeholder="your.email@example.com"
+                                        required
+                                        autofocus
+                                        autocomplete="email"
+                                        class="pl-10 h-12 border-2 border-amber-200 dark:border-amber-800 focus:border-amber-600 focus:ring-amber-600 bg-white dark:bg-slate-900"
+                                        :class="{ 'border-rose-500': form.errors.email }"
+                                    />
+                                </div>
+                                <p v-if="form.errors.email" class="text-xs text-rose-600 dark:text-rose-400 flex items-center gap-1">
+                                    <span class="inline-block w-1 h-1 rounded-full bg-rose-600"></span>
+                                    {{ form.errors.email }}
+                                </p>
+                            </div>
+
+                            <!-- Password -->
+                            <div class="space-y-2">
+                                <div class="flex items-center justify-between">
+                                    <Label for="password" class="text-sm font-semibold text-amber-900 dark:text-amber-100">
+                                        Password
+                                    </Label>
+                                    <Link
+                                        v-if="canResetPassword"
+                                        :href="route('password.request')"
+                                        class="text-xs font-medium text-amber-700 hover:text-amber-800 dark:text-amber-400 dark:hover:text-amber-300 transition-colors"
+                                    >
+                                        Forgot password?
+                                    </Link>
+                                </div>
+                                <div class="relative">
+                                    <LockIcon class="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-orange-600 dark:text-orange-500" />
+                                    <Input
+                                        id="password"
+                                        v-model="form.password"
+                                        type="password"
+                                        placeholder="••••••••••"
+                                        required
+                                        autocomplete="current-password"
+                                        class="pl-10 h-12 border-2 border-amber-200 dark:border-amber-800 focus:border-orange-600 focus:ring-orange-600 bg-white dark:bg-slate-900"
+                                        :class="{ 'border-rose-500': form.errors.password }"
+                                    />
+                                </div>
+                                <p v-if="form.errors.password" class="text-xs text-rose-600 dark:text-rose-400 flex items-center gap-1">
+                                    <span class="inline-block w-1 h-1 rounded-full bg-rose-600"></span>
+                                    {{ form.errors.password }}
+                                </p>
+                            </div>
+
+                            <!-- Remember Me -->
+                            <div class="flex items-center space-x-2 pt-2">
+                                <Checkbox
+                                    id="remember"
+                                    v-model:checked="form.remember"
+                                    class="border-2 border-amber-300 data-[state=checked]:bg-amber-700 data-[state=checked]:border-amber-700"
+                                />
+                                <Label
+                                    for="remember"
+                                    class="text-sm font-medium cursor-pointer text-amber-900 dark:text-amber-100"
+                                >
+                                    Keep me signed in
+                                </Label>
+                            </div>
+
+                            <!-- Submit Button -->
+                            <Button
+                                type="submit"
+                                class="w-full h-12 text-base font-semibold bg-gradient-to-r from-amber-700 to-orange-700 hover:from-amber-800 hover:to-orange-800 text-white shadow-lg hover:shadow-xl transition-all duration-200"
+                                :disabled="form.processing"
+                            >
+                                <span v-if="form.processing" class="flex items-center gap-2">
+                                    <LibraryIcon class="h-5 w-5 animate-pulse" />
+                                    Signing you in...
+                                </span>
+                                <span v-else class="flex items-center gap-2">
+                                    <BookOpenIcon class="h-5 w-5" />
+                                    Sign In
+                                </span>
+                            </Button>
+                        </form>
+
+                        <!-- Demo Credentials -->
+                        <div class="mt-6 rounded-xl bg-gradient-to-br from-amber-100 to-orange-100 dark:from-amber-900/30 dark:to-orange-900/30 border-2 border-amber-300/50 dark:border-amber-700/50 p-4">
+                            <div class="flex items-center gap-2 mb-3">
+                                <BookmarkIcon class="h-4 w-4 text-amber-700 dark:text-amber-400" />
+                                <p class="text-xs font-bold text-amber-900 dark:text-amber-100">Demo Accounts:</p>
+                            </div>
+                            <div class="space-y-2 text-xs text-amber-800 dark:text-amber-200">
+                                <div class="flex items-start gap-2">
+                                    <span class="inline-block w-2 h-2 rounded-full bg-amber-600 mt-1"></span>
+                                    <div class="flex-1">
+                                        <span class="font-semibold">Librarian:</span>
+                                        <code class="block mt-1 px-2 py-1 bg-white/60 dark:bg-black/20 rounded text-xs">sarah@library.com</code>
+                                    </div>
+                                </div>
+                                <div class="flex items-start gap-2">
+                                    <span class="inline-block w-2 h-2 rounded-full bg-orange-600 mt-1"></span>
+                                    <div class="flex-1">
+                                        <span class="font-semibold">Member:</span>
+                                        <code class="block mt-1 px-2 py-1 bg-white/60 dark:bg-black/20 rounded text-xs">john.smith@example.com</code>
+                                    </div>
+                                </div>
+                                <div class="pl-6 text-amber-700 dark:text-amber-300 mt-2">
+                                    All passwords: <code class="px-2 py-0.5 bg-white/60 dark:bg-black/20 rounded font-mono">password</code>
+                                </div>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <!-- Footer -->
+                <div class="mt-6 text-center">
+                    <p class="text-sm text-amber-700 dark:text-amber-400">
+                        Need help? 
+                        <a href="#" class="font-semibold text-amber-800 hover:text-amber-900 dark:text-amber-300 dark:hover:text-amber-200 transition-colors underline">
+                            Contact our librarians
+                        </a>
+                    </p>
                 </div>
-
-                <Button
-                    type="submit"
-                    class="mt-4 w-full"
-                    :tabindex="4"
-                    :disabled="processing"
-                    data-test="login-button"
-                >
-                    <Spinner v-if="processing" />
-                    Log in
-                </Button>
             </div>
-
-            <div
-                class="text-center text-sm text-muted-foreground"
-                v-if="canRegister"
-            >
-                Don't have an account?
-                <TextLink :href="register()" :tabindex="5">Sign up</TextLink>
-            </div>
-        </Form>
-    </AuthBase>
+        </div>
+    </div>
 </template>

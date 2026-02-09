@@ -112,6 +112,22 @@ class RolesPermissionsAndUsersSeeder extends Seeder
             'manage settings',
             'manage roles',
             'manage permissions',
+
+            // Room Management
+            'view rooms',
+            'create rooms',
+            'edit rooms',
+            'delete rooms',
+
+            // Room Booking Management
+            'view room bookings',
+            'create room bookings',
+            'cancel room bookings',
+
+            // Reservation Management
+            'view reservations',
+            'create reservations',
+            'cancel reservations',
         ];
 
         foreach ($permissions as $permission) {
@@ -142,6 +158,9 @@ class RolesPermissionsAndUsersSeeder extends Seeder
             'view publishers', 'create publishers', 'edit publishers', 'delete publishers',
             'view fines', 'waive fines', 'collect fines',
             'view reports', 'export reports',
+            'view rooms', 'create rooms', 'edit rooms', 'delete rooms',
+            'view room bookings', 'create room bookings', 'cancel room bookings',
+            'view reservations', 'create reservations', 'cancel reservations',
         ]);
 
         // 3. Librarian - Book and loan management
@@ -156,6 +175,9 @@ class RolesPermissionsAndUsersSeeder extends Seeder
             'view publishers', 'create publishers',
             'view fines', 'collect fines',
             'view reports',
+            'view rooms', 'create rooms', 'edit rooms',
+            'view room bookings', 'create room bookings', 'cancel room bookings',
+            'view reservations', 'create reservations', 'cancel reservations',
         ]);
 
         // 4. Member - Basic user (borrower)
@@ -163,6 +185,9 @@ class RolesPermissionsAndUsersSeeder extends Seeder
         $member->givePermissionTo([
             'view books',
             'view book copies',
+            'view rooms',
+            'create room bookings',
+            'create reservations',
         ]);
 
         $this->command->info('✅ Roles created and permissions assigned');
@@ -193,16 +218,8 @@ class RolesPermissionsAndUsersSeeder extends Seeder
         // Create staff profile
         if (!$superAdminUser->staff) {
             $superAdminUser->staff()->create([
-                'department' => 'Executive',
                 'position' => 'System Administrator',
                 'hire_date' => now()->subYears(5),
-                'work_hours' => [
-                    'monday' => '8:00-18:00',
-                    'tuesday' => '8:00-18:00',
-                    'wednesday' => '8:00-18:00',
-                    'thursday' => '8:00-18:00',
-                    'friday' => '8:00-18:00',
-                ],
             ]);
         }
 
@@ -224,16 +241,8 @@ class RolesPermissionsAndUsersSeeder extends Seeder
         // Create staff profile
         if (!$adminUser->staff) {
             $adminUser->staff()->create([
-                'department' => 'Administration',
                 'position' => 'Library Administrator',
                 'hire_date' => now()->subYears(3),
-                'work_hours' => [
-                    'monday' => '9:00-17:00',
-                    'tuesday' => '9:00-17:00',
-                    'wednesday' => '9:00-17:00',
-                    'thursday' => '9:00-17:00',
-                    'friday' => '9:00-17:00',
-                ],
             ]);
         }
 
@@ -245,7 +254,6 @@ class RolesPermissionsAndUsersSeeder extends Seeder
                 'name' => 'Sarah Johnson',
                 'email' => 'sarah@library.com',
                 'phone' => '+1-555-0003',
-                'department' => 'Circulation',
                 'position' => 'Senior Librarian',
                 'hire_date' => now()->subYears(2),
             ],
@@ -253,7 +261,6 @@ class RolesPermissionsAndUsersSeeder extends Seeder
                 'name' => 'Michael Chen',
                 'email' => 'michael@library.com',
                 'phone' => '+1-555-0004',
-                'department' => 'Reference',
                 'position' => 'Reference Librarian',
                 'hire_date' => now()->subYear(),
             ],
@@ -261,7 +268,6 @@ class RolesPermissionsAndUsersSeeder extends Seeder
                 'name' => 'Emily Davis',
                 'email' => 'emily@library.com',
                 'phone' => '+1-555-0005',
-                'department' => 'Children Section',
                 'position' => 'Children\'s Librarian',
                 'hire_date' => now()->subMonths(8),
             ],
@@ -282,17 +288,8 @@ class RolesPermissionsAndUsersSeeder extends Seeder
             
             if (!$librarian->staff) {
                 $librarian->staff()->create([
-                    'department' => $librarianData['department'],
                     'position' => $librarianData['position'],
                     'hire_date' => $librarianData['hire_date'],
-                    'work_hours' => [
-                        'monday' => '9:00-17:00',
-                        'tuesday' => '9:00-17:00',
-                        'wednesday' => '9:00-17:00',
-                        'thursday' => '9:00-17:00',
-                        'friday' => '9:00-17:00',
-                        'saturday' => '10:00-14:00',
-                    ],
                 ]);
             }
         }
@@ -307,8 +304,7 @@ class RolesPermissionsAndUsersSeeder extends Seeder
                 'phone' => '+1-555-1001',
                 'dob' => '1990-05-15',
                 'gender' => 'male',
-                'address' => '123 Main Street, Springfield, IL 62701',
-                'membership_type' => 'standard',
+                'membership_type' => 'basic',
                 'emergency_name' => 'Jane Smith',
                 'emergency_phone' => '+1-555-1002',
                 'emergency_relationship' => 'Spouse',
@@ -319,7 +315,6 @@ class RolesPermissionsAndUsersSeeder extends Seeder
                 'phone' => '+1-555-1003',
                 'dob' => '1985-08-22',
                 'gender' => 'female',
-                'address' => '456 Oak Avenue, Springfield, IL 62702',
                 'membership_type' => 'premium',
                 'emergency_name' => 'Carlos Garcia',
                 'emergency_phone' => '+1-555-1004',
@@ -331,7 +326,6 @@ class RolesPermissionsAndUsersSeeder extends Seeder
                 'phone' => '+1-555-1005',
                 'dob' => '2000-03-10',
                 'gender' => 'male',
-                'address' => '789 Elm Street, Springfield, IL 62703',
                 'membership_type' => 'student',
                 'emergency_name' => 'Linda Wilson',
                 'emergency_phone' => '+1-555-1006',
@@ -343,7 +337,6 @@ class RolesPermissionsAndUsersSeeder extends Seeder
                 'phone' => '+1-555-1007',
                 'dob' => '1955-11-30',
                 'gender' => 'female',
-                'address' => '321 Pine Road, Springfield, IL 62704',
                 'membership_type' => 'senior',
                 'emergency_name' => 'Robert Brown',
                 'emergency_phone' => '+1-555-1008',
@@ -355,8 +348,7 @@ class RolesPermissionsAndUsersSeeder extends Seeder
                 'phone' => '+1-555-1009',
                 'dob' => '1995-07-18',
                 'gender' => 'male',
-                'address' => '654 Maple Drive, Springfield, IL 62705',
-                'membership_type' => 'standard',
+                'membership_type' => 'basic',
                 'emergency_name' => 'Emma Taylor',
                 'emergency_phone' => '+1-555-1010',
                 'emergency_relationship' => 'Sister',
@@ -380,7 +372,6 @@ class RolesPermissionsAndUsersSeeder extends Seeder
                 $member->member()->create([
                     'date_of_birth' => $memberData['dob'],
                     'gender' => $memberData['gender'],
-                    'address' => $memberData['address'],
                     'membership_start_date' => now()->subMonths(rand(1, 12)),
                     'membership_expiry_date' => now()->addYear(),
                     'membership_type' => $memberData['membership_type'],

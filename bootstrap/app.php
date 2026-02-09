@@ -21,6 +21,10 @@ return Application::configure(basePath: dirname(__DIR__))
             HandleInertiaRequests::class,
             AddLinkHeadersForPreloadedAssets::class,
         ]);
+
+        $middleware->redirectTo(
+            users: '/dashboard',
+        );
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

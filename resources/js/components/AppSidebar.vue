@@ -15,7 +15,7 @@ import { dashboard } from '@/routes';
 import { type NavItem } from '@/types';
 
 import { Link, usePage } from '@inertiajs/vue3';
-import { BookOpen, Folder, LayoutGrid, Library, FileCog, Handshake, CircleUserRound, ShieldUser } from 'lucide-vue-next';
+import { BookOpen, Folder, LayoutGrid, Library, FileCog, Handshake, Settings, Home, DoorClosed} from 'lucide-vue-next';
 import { computed } from 'vue';
 import AppLogo from './AppLogo.vue';
 
@@ -41,6 +41,12 @@ const mainNavItems: NavItem[] = [
         href: '/books',
         icon: Library,
         isActive: computed(() => currentUrl.value.startsWith('/books')),
+    },
+    {
+        title: 'Rooms',
+        href: '/rooms',
+        icon: DoorClosed,
+        isActive: computed(() => currentUrl.value.startsWith('/rooms')),
     },
     {
         title: 'Catalog',
@@ -69,17 +75,31 @@ const mainNavItems: NavItem[] = [
         ],
     },
     {
-        title: 'Admins',
-        href: '/admins',
-        icon: ShieldUser,
-        isActive: computed(() => currentUrl.value.startsWith('/admins')),
-    },
-    {
-        title: 'Members',
-        href: '/members',
-        icon: CircleUserRound,
-        isActive: computed(() => currentUrl.value.startsWith('/members')),
-    },
+        title: 'Settings',
+        icon: Settings,
+        isActive: computed(() =>
+            currentUrl.value.startsWith('/roles') ||
+            currentUrl.value.startsWith('/staffs') ||
+            currentUrl.value.startsWith('/members')
+        ),
+        items: [
+            {
+                title: 'Roles',
+                href: '/roles',
+                isActive: computed(() => currentUrl.value.startsWith('/roles')),
+            },
+            {
+                title: 'Admins & Staff',
+                href: '/staffs',
+                isActive: computed(() => currentUrl.value.startsWith('/admins')),
+            },
+            {
+                title: 'Members',
+                href: '/members',
+                isActive: computed(() => currentUrl.value.startsWith('/members')),
+            },
+        ],
+    }
 ];
 
 const footerNavItems: NavItem[] = [

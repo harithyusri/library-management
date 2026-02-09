@@ -9,6 +9,8 @@ use App\Http\Controllers\GenreController;
 use App\Http\Controllers\LoanController;
 use App\Http\Controllers\MemberController;
 use App\Http\Controllers\PublisherController;
+use App\Http\Controllers\RoleController;
+use App\Http\Controllers\RoomController;
 use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Features;
 
@@ -70,7 +72,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('loans', [LoanController::class, 'store'])->name('loans.store');
     Route::put('loans/{loan}/return', [LoanController::class, 'return'])->name('loans.return');
 
-    Route::prefix('admins')->name('admins.')->group(function () {
+    Route::prefix('staffs')->name('staffs.')->group(function () {
         Route::get('/', [StaffController::class, 'index'])->name('index');
         Route::get('/create', [StaffController::class, 'create'])->name('create');
         Route::post('/', [StaffController::class, 'store'])->name('store');
@@ -78,6 +80,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/{user}/edit', [StaffController::class, 'edit'])->name('edit');
         Route::put('/{user}', [StaffController::class, 'update'])->name('update');
         Route::delete('/{user}', [StaffController::class, 'destroy'])->name('destroy');
+    });
+
+    Route::prefix('roles')->name('roles.')->group(function () {
+        Route::get('/', [RoleController::class, 'index'])->name('index');
+        Route::get('/create', [RoleController::class, 'create'])->name('create');
+        Route::post('/', [RoleController::class, 'store'])->name('store');
+        Route::get('/{role}', [RoleController::class, 'show'])->name('show');
+        Route::get('/{role}/edit', [RoleController::class, 'edit'])->name('edit');
+        Route::put('/{role}', [RoleController::class, 'update'])->name('update');
     });
 
     // Members
@@ -89,6 +100,36 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/{user}/edit', [MemberController::class, 'edit'])->name('edit');
         Route::put('/{user}', [MemberController::class, 'update'])->name('update');
         Route::delete('/{user}', [MemberController::class, 'destroy'])->name('destroy');
+    });
+
+    // ==========================================
+    // ROOM MANAGEMENT
+    // ==========================================
+    Route::prefix('rooms')->name('rooms.')->group(function () {
+        // Public routes (view only)
+        Route::get('/', [RoomController::class, 'index'])->name('index');
+        Route::get('/{room}', [RoomController::class, 'show'])->name('show');
+        
+        // Protected routes (staff only)
+        Route::get('/create', [RoomController::class, 'create'])
+            ->name('create')
+            ->middleware(['permission:create rooms']);
+        
+        Route::post('/', [RoomController::class, 'store'])
+            ->name('store')
+            ->middleware(['permission:create rooms']);
+        
+        Route::get('/{room}/edit', [RoomController::class, 'edit'])
+            ->name('edit')
+            ->middleware(['permission:edit rooms']);
+        
+        Route::put('/{room}', [RoomController::class, 'update'])
+            ->name('update')
+            ->middleware(['permission:edit rooms']);
+        
+        Route::delete('/{room}', [RoomController::class, 'destroy'])
+            ->name('destroy')
+            ->middleware(['permission:delete rooms']);
     });
 });
 
