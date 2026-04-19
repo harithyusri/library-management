@@ -2,13 +2,16 @@
 
 namespace App\Models;
 
+use App\Traits\HasLibrary;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
+use OwenIt\Auditing\Contracts\Auditable;
+use OwenIt\Auditing\Auditable as AuditableTrait;
 
-class BookCopy extends Model
+class BookCopy extends Model implements Auditable
 {
-    use SoftDeletes;
+    use SoftDeletes, AuditableTrait, HasLibrary;
 
     protected $fillable = [
         'book_id',
@@ -21,6 +24,7 @@ class BookCopy extends Model
         'acquisition_price',
         'qr_code_url',
         'notes',
+        'library_id',
     ];
 
     protected $casts = [
@@ -62,21 +66,21 @@ class BookCopy extends Model
     }
 
     /**
-     * Get the active borrow record for this copy.
+     * Get the active loan record for this copy.
      */
     public function activeBorrow()
     {
-        return $this->hasOne(Borrow::class)
-            ->whereNull('returned_at')
+        return $this->hasOne(Loan::class)
+            ->whereNull('returned_date')
             ->latest();
     }
 
     /**
-     * Get all borrow history for this copy.
+     * Get all loan history for this copy.
      */
     public function borrows()
     {
-        return $this->hasMany(Borrow::class)->orderBy('borrowed_at', 'desc');
+        return $this->hasMany(Loan::class)->orderBy('borrowed_date', 'desc');
     }
 
     /**

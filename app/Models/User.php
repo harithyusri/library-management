@@ -7,10 +7,13 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use OwenIt\Auditing\Contracts\Auditable;
+use OwenIt\Auditing\Auditable as AuditableTrait;
+use Illuminate\Support\Facades\DB;
 
-class User extends Authenticatable
+class User extends Authenticatable implements Auditable
 {
-    use HasFactory, Notifiable, HasRoles, SoftDeletes;
+    use HasFactory, Notifiable, HasRoles, SoftDeletes, AuditableTrait;
 
     /**
      * The attributes that are mass assignable.
@@ -89,6 +92,14 @@ class User extends Authenticatable
     }
 
     /**
+     * Get all room bookings for this user.
+     */
+    public function roomBookings()
+    {
+        return $this->hasMany(RoomBooking::class);
+    }
+
+    /**
      * Get active loans for this user.
      */
     public function activeLoans()
@@ -120,9 +131,7 @@ class User extends Authenticatable
      */
     public function getTotalUnpaidFines(): float
     {
-        return $this->loans()
-            ->where('fine_paid', false)
-            ->sum('fine_amount');
+        return $this->loans()->where('fine_paid', false)->sum(DB::raw('fine_amount - fine_paid_amount'));
     }
 
     /**
@@ -130,7 +139,7 @@ class User extends Authenticatable
      */
     public function isAdmin(): bool
     {
-        return $this->hasRole(['admin', 'super-admin']);
+        return $this->hasRole(['Super Admin', 'Admin']);
     }
 
     /**
@@ -138,7 +147,7 @@ class User extends Authenticatable
      */
     public function isLibrarian(): bool
     {
-        return $this->hasRole('librarian');
+        return $this->hasRole('Librarian');
     }
 
     /**
@@ -146,7 +155,7 @@ class User extends Authenticatable
      */
     public function isStaff(): bool
     {
-        return $this->hasRole(['admin', 'super-admin', 'librarian']);
+        return $this->hasRole(['Super Admin', 'Admin', 'Librarian']);
     }
 
     /**
@@ -154,7 +163,7 @@ class User extends Authenticatable
      */
     public function isMember(): bool
     {
-        return $this->hasRole('member');
+        return $this->hasRole('Library Members');
     }
 
     /**
@@ -187,7 +196,7 @@ class User extends Authenticatable
     public function scopeMembers($query)
     {
         return $query->whereHas('roles', function ($q) {
-            $q->where('name', 'member');
+            $q->where('type', 'member');
         });
     }
 
@@ -197,7 +206,7 @@ class User extends Authenticatable
     public function scopeStaff($query)
     {
         return $query->whereHas('roles', function ($q) {
-            $q->whereIn('name', ['super-admin', 'admin', 'librarian']);
+            $q->where('type', 'staff');
         });
     }
 }

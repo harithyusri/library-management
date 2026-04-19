@@ -15,6 +15,12 @@ class RoleRedirect
      */
     public function handle(Request $request, Closure $next): Response
     {
+        if ($request->is('/') && $request->user()) {
+            return $request->user()->isMember() 
+                ? redirect()->route('member.dashboard') 
+                : redirect()->route('admin.dashboard');
+        }
+
         return $next($request);
     }
 }

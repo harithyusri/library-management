@@ -21,14 +21,17 @@ import { computed, type ComputedRef } from 'vue';
 
 interface Props {
     items: NavItem[];
+    title?: string;
 }
 
-const props = defineProps<Props>();
+const props = withDefaults(defineProps<Props>(), {
+    title: 'Platform',
+});
 </script>
 
 <template>
     <SidebarGroup>
-        <SidebarGroupLabel>Platform</SidebarGroupLabel>
+        <SidebarGroupLabel>{{ title }}</SidebarGroupLabel>
         <SidebarMenu>
             <template v-for="item in items" :key="item.title">
                 <!-- Collapsible menu (for items with subitems) -->

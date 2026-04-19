@@ -2,12 +2,15 @@
 
 namespace App\Models;
 
+use App\Traits\HasLibrary;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use OwenIt\Auditing\Contracts\Auditable;
+use OwenIt\Auditing\Auditable as AuditableTrait;
 
-class Loan extends Model
+class Loan extends Model implements Auditable
 {
-    use SoftDeletes;
+    use SoftDeletes, AuditableTrait, HasLibrary;
 
     protected $fillable = [
         'book_copy_id',
@@ -19,7 +22,10 @@ class Loan extends Model
         'status',
         'fine_amount',
         'fine_paid',
+        'fine_receipt_path',
+        'fine_paid_amount',
         'notes',
+        'library_id',
     ];
 
     protected $casts = [
@@ -27,6 +33,7 @@ class Loan extends Model
         'due_date' => 'date',
         'returned_date' => 'date',
         'fine_amount' => 'decimal:2',
+        'fine_paid_amount' => 'decimal:2',
         'fine_paid' => 'boolean',
     ];
 
@@ -92,6 +99,15 @@ class Loan extends Model
             return 0;
         }
 
-        return now()->diffInDays($this->due_date, false);
+        $days = $this->due_date->diffInDays(now());
+        return $days > 0 ? $days : 0;
+    }
+
+    /**
+     * Get the fine payments made for this loan.
+     */
+    public function payments()
+    {
+        return $this->hasMany(FinePayment::class);
     }
 }

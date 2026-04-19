@@ -2,13 +2,14 @@
 
 namespace App\Models;
 
+use App\Traits\HasLibrary;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Staff extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes, HasLibrary;
 
     /**
      * The table associated with the model.
@@ -22,10 +23,11 @@ class Staff extends Model
         'user_id',
         'employee_id',
         'hire_date',
-        'department',
+        'department_id',
         'position',
         'work_hours',
         'notes',
+        'library_id',
     ];
 
     /**
@@ -73,6 +75,14 @@ class Staff extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Get the department this staff member belongs to.
+     */
+    public function department()
+    {
+        return $this->belongsTo(Department::class);
     }
 
     /**
@@ -194,9 +204,9 @@ class Staff extends Model
     /**
      * Scope: By department.
      */
-    public function scopeByDepartment($query, $department)
+    public function scopeByDepartment($query, $departmentId)
     {
-        return $query->where('department', $department);
+        return $query->where('department_id', $departmentId);
     }
 
     /**

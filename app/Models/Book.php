@@ -4,10 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use OwenIt\Auditing\Contracts\Auditable;
+use OwenIt\Auditing\Auditable as AuditableTrait;
 
-class Book extends Model
+class Book extends Model implements Auditable
 {
-    use SoftDeletes;
+    use SoftDeletes, AuditableTrait;
 
     protected $fillable = [
         'title',
@@ -16,17 +18,17 @@ class Book extends Model
         'genre_ids',
         'category_id',
         'publisher_id',
-        'publication_year',
+        'published_year',
         'format',
         'pages',
         'language',
         'description',
-        'cover_image_url',
+        'cover_image',
     ];
 
     protected $casts = [
         'genre_ids' => 'array',
-        'publication_year' => 'integer',
+        'published_year' => 'integer',
         'pages' => 'integer',
     ];
 

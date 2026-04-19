@@ -57,6 +57,8 @@ class RolesPermissionsAndUsersSeeder extends Seeder
     private function createPermissions(): void
     {
         $permissions = [
+            'view dashboard',
+
             // User Management
             'view users',
             'create users',
@@ -122,12 +124,23 @@ class RolesPermissionsAndUsersSeeder extends Seeder
             // Room Booking Management
             'view room bookings',
             'create room bookings',
+            'edit room bookings',
+            'delete room bookings',
             'cancel room bookings',
 
             // Reservation Management
             'view reservations',
             'create reservations',
             'cancel reservations',
+
+            // Audit Logs
+            'view audits',
+
+            // Announcements
+            'view announcements',
+            'create announcements',
+            'edit announcements',
+            'delete announcements',
         ];
 
         foreach ($permissions as $permission) {
@@ -143,12 +156,13 @@ class RolesPermissionsAndUsersSeeder extends Seeder
     private function createRoles(): array
     {
         // 1. Super Admin - Full access
-        $superAdmin = Role::firstOrCreate(['name' => 'super-admin']);
+        $superAdmin = Role::firstOrCreate(['name' => 'Super Admin']);
         $superAdmin->givePermissionTo(Permission::all());
 
         // 2. Admin - Almost full access (no system settings)
-        $admin = Role::firstOrCreate(['name' => 'admin']);
+        $admin = Role::firstOrCreate(['name' => 'Admin']);
         $admin->givePermissionTo([
+            'view dashboard',
             'view users', 'create users', 'edit users', 'delete users',
             'view books', 'create books', 'edit books', 'delete books',
             'view book copies', 'create book copies', 'edit book copies', 'delete book copies',
@@ -159,13 +173,15 @@ class RolesPermissionsAndUsersSeeder extends Seeder
             'view fines', 'waive fines', 'collect fines',
             'view reports', 'export reports',
             'view rooms', 'create rooms', 'edit rooms', 'delete rooms',
-            'view room bookings', 'create room bookings', 'cancel room bookings',
+            'view room bookings', 'create room bookings', 'edit room bookings', 'delete room bookings', 'cancel room bookings',
             'view reservations', 'create reservations', 'cancel reservations',
+            'view announcements', 'create announcements', 'edit announcements', 'delete announcements',
         ]);
 
         // 3. Librarian - Book and loan management
-        $librarian = Role::firstOrCreate(['name' => 'librarian']);
+        $librarian = Role::firstOrCreate(['name' => 'Librarian']);
         $librarian->givePermissionTo([
+            'view dashboard',
             'view users',
             'view books', 'create books', 'edit books',
             'view book copies', 'create book copies', 'edit book copies',
@@ -176,18 +192,21 @@ class RolesPermissionsAndUsersSeeder extends Seeder
             'view fines', 'collect fines',
             'view reports',
             'view rooms', 'create rooms', 'edit rooms',
-            'view room bookings', 'create room bookings', 'cancel room bookings',
+            'view room bookings', 'create room bookings', 'edit room bookings', 'delete room bookings', 'cancel room bookings',
             'view reservations', 'create reservations', 'cancel reservations',
+            'view announcements', 'create announcements', 'edit announcements', 'delete announcements',
         ]);
 
-        // 4. Member - Basic user (borrower)
-        $member = Role::firstOrCreate(['name' => 'member']);
+        // 4. Library Members - Basic user (borrower)
+        $member = Role::firstOrCreate(['name' => 'Library Members']);
         $member->givePermissionTo([
+            'view dashboard',
             'view books',
             'view book copies',
             'view rooms',
             'create room bookings',
             'create reservations',
+            'view announcements',
         ]);
 
         $this->command->info('✅ Roles created and permissions assigned');
@@ -200,9 +219,6 @@ class RolesPermissionsAndUsersSeeder extends Seeder
      */
     private function createUsers(array $roles): void
     {
-        // ==========================================
-        // SUPER ADMIN
-        // ==========================================
         $superAdminUser = User::firstOrCreate(
             ['email' => 'superadmin@library.com'],
             [
@@ -213,7 +229,7 @@ class RolesPermissionsAndUsersSeeder extends Seeder
                 'email_verified_at' => now(),
             ]
         );
-        $superAdminUser->syncRoles(['super-admin']);
+        $superAdminUser->syncRoles(['Super Admin']);
         
         // Create staff profile
         if (!$superAdminUser->staff) {
@@ -236,7 +252,7 @@ class RolesPermissionsAndUsersSeeder extends Seeder
                 'email_verified_at' => now(),
             ]
         );
-        $adminUser->syncRoles(['admin']);
+        $adminUser->syncRoles(['Admin']);
         
         // Create staff profile
         if (!$adminUser->staff) {
@@ -284,7 +300,7 @@ class RolesPermissionsAndUsersSeeder extends Seeder
                     'email_verified_at' => now(),
                 ]
             );
-            $librarian->syncRoles(['librarian']);
+            $librarian->syncRoles(['Librarian']);
             
             if (!$librarian->staff) {
                 $librarian->staff()->create([
@@ -366,7 +382,7 @@ class RolesPermissionsAndUsersSeeder extends Seeder
                     'email_verified_at' => now(),
                 ]
             );
-            $member->syncRoles(['member']);
+            $member->syncRoles(['Library Members']);
             
             if (!$member->member) {
                 $member->member()->create([

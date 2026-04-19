@@ -3,6 +3,9 @@ import type { LucideIcon } from 'lucide-vue-next';
 
 export interface Auth {
     user: User;
+    is_member: boolean;
+    is_staff: boolean;
+    can: Record<string, boolean>;
 }
 
 export interface BreadcrumbItem {
@@ -16,6 +19,7 @@ export interface NavItem {
     icon?: LucideIcon;
     isActive?: boolean | ComputedRef<boolean>;
     items?: NavItem[];
+    hidden?: boolean;
 }
 
 export type AppPageProps<

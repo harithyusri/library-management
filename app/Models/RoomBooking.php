@@ -2,13 +2,16 @@
 
 namespace App\Models;
 
+use App\Traits\HasLibrary;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use OwenIt\Auditing\Contracts\Auditable;
+use OwenIt\Auditing\Auditable as AuditableTrait;
 
-class RoomBooking extends Model
+class RoomBooking extends Model implements Auditable
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes, AuditableTrait, HasLibrary;
 
     /**
      * The attributes that are mass assignable.
@@ -28,6 +31,7 @@ class RoomBooking extends Model
         'approved_at',
         'cancellation_reason',
         'cancelled_at',
+        'library_id',
     ];
 
     /**

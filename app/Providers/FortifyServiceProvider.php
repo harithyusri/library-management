@@ -36,13 +36,13 @@ class FortifyServiceProvider extends ServiceProvider
         $this->app->instance(LoginResponse::class, new class implements LoginResponse {
             public function toResponse($request)
             {
-                // If user is admin, redirect to admin dashboard
-                if ($request->user()->role === 'admin') {
+                // If user is staff (admin/librarian), redirect to admin dashboard
+                if ($request->user()->isStaff()) {
                     return redirect()->route('admin.dashboard');
                 }
 
-                // Otherwise, redirect to regular dashboard
-                return redirect()->route('dashboard');
+                // Otherwise, redirect to member dashboard
+                return redirect()->route('member.dashboard');
             }
         });
     }

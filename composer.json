@@ -10,6 +10,7 @@
     "license": "MIT",
     "require": {
         "php": "^8.2",
+        "barryvdh/laravel-dompdf": "^3.1",
         "chillerlan/php-qrcode": "^5.0",
         "inertiajs/inertia-laravel": "^2.0",
         "laravel/fortify": "^1.30",
@@ -17,7 +18,9 @@
         "laravel/tinker": "^2.10.1",
         "laravel/wayfinder": "^0.1.9",
         "league/flysystem-aws-s3-v3": "^3.30",
+        "owen-it/laravel-auditing": "^14.0",
         "spatie/laravel-permission": "^6.24",
+        "stripe/stripe-php": "^20.0",
         "tightenco/ziggy": "^2.6"
     },
     "require-dev": {

@@ -1,12 +1,12 @@
 <?php
-
-namespace App\Models;
-
+use App\Traits\HasLibrary;
 use Illuminate\Database\Eloquent\Model;
 use Carbon\Carbon;
 
 class Reservation extends Model
 {
+    use HasLibrary;
+
     protected $fillable = [
         'book_id',
         'user_id',
@@ -15,6 +15,7 @@ class Reservation extends Model
         'status',
         'book_copy_id',
         'notified_at',
+        'library_id',
     ];
 
     protected $casts = [
