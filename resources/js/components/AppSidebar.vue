@@ -196,6 +196,7 @@ const adminNavItems = computed<NavItem[]>(() => [
         title: 'Settings',
         icon: Settings,
         isActive: computed(() =>
+            currentUrl.value.startsWith('/admin/users') ||
             currentUrl.value.startsWith('/admin/roles') ||
             currentUrl.value.startsWith('/admin/staffs') ||
             currentUrl.value.startsWith('/admin/members') ||
@@ -208,6 +209,12 @@ const adminNavItems = computed<NavItem[]>(() => [
                 title: 'Access Control',
                 href: '/admin/roles',
                 isActive: computed(() => currentUrl.value.startsWith('/admin/roles')),
+                hidden: !page.props.auth.can?.manage_roles,
+            },
+            {
+                title: 'All Users',
+                href: '/admin/users',
+                isActive: computed(() => currentUrl.value.startsWith('/admin/users')),
                 hidden: !page.props.auth.can?.manage_roles,
             },
             {

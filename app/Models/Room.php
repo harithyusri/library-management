@@ -4,12 +4,13 @@ namespace App\Models;
 
 use App\Traits\HasLibrary;
 use Illuminate\Database\Eloquent\Model;
-use OwenIt\Auditing\Contracts\Auditable;
 use OwenIt\Auditing\Auditable as AuditableTrait;
+use OwenIt\Auditing\Contracts\Auditable;
 
 class Room extends Model implements Auditable
 {
     use AuditableTrait, HasLibrary;
+
     protected $fillable = [
         'name',
         'room_number',
@@ -24,7 +25,7 @@ class Room extends Model implements Auditable
         'library_id',
     ];
 
-    protected $appends = ['type_display', 'status_display'];
+    protected $appends = ['type_display', 'status_display', 'image_url'];
 
     protected $casts = [
         'amenities' => 'array',
@@ -60,6 +61,11 @@ class Room extends Model implements Auditable
         'unavailable' => 'Unavailable',
     ];
 
+    public function getImageUrlAttribute()
+    {
+        return $this->image ? asset('storage/'.$this->image) : null;
+    }
+
     public function getTypeDisplayAttribute()
     {
         return $this->roomTypes[$this->type] ?? $this->type;
@@ -75,7 +81,6 @@ class Room extends Model implements Auditable
         return $this->roomTypes;
     }
 
-
     public function getAmenitiesListAttribute()
     {
         return $this->amenitiesList;
@@ -90,5 +95,4 @@ class Room extends Model implements Auditable
     {
         return $this->hasMany(RoomBooking::class);
     }
-
 }

@@ -32,6 +32,29 @@ class Book extends Model implements Auditable
         'pages' => 'integer',
     ];
 
+    protected $appends = ['cover_image_url'];
+
+    /**
+     * Get the full URL for the book cover image.
+     */
+    public function getCoverImageUrlAttribute(): ?string
+    {
+        if (! $this->cover_image) {
+            return null;
+        }
+
+        if (filter_var($this->cover_image, FILTER_VALIDATE_URL)) {
+            return $this->cover_image;
+        }
+
+        $path = ltrim($this->cover_image, '/');
+        if (str_starts_with($path, 'storage/')) {
+            $path = substr($path, strlen('storage/'));
+        }
+
+        return asset('storage/'.$path);
+    }
+
     private static function formatOptions()
     {
         return [

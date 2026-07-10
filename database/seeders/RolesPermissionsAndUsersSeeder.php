@@ -2,19 +2,20 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
-use Spatie\Permission\Models\Role;
-use Spatie\Permission\Models\Permission;
-use App\Models\User;
-use App\Models\Member;
 use App\Models\Staff;
-use Illuminate\Support\Facades\Hash;
+use App\Models\User;
+use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
 
 class RolesPermissionsAndUsersSeeder extends Seeder
 {
     /**
      * Run the database seeder.
+     * Below is the command to run this seeder:
+     * php artisan db:seed  --class=RolesPermissionsAndUsersSeeder
      */
     public function run(): void
     {
@@ -46,7 +47,7 @@ class RolesPermissionsAndUsersSeeder extends Seeder
 
         } catch (\Exception $e) {
             DB::rollBack();
-            $this->command->error('❌ Seeder failed: ' . $e->getMessage());
+            $this->command->error('❌ Seeder failed: '.$e->getMessage());
             throw $e;
         }
     }
@@ -64,52 +65,52 @@ class RolesPermissionsAndUsersSeeder extends Seeder
             'create users',
             'edit users',
             'delete users',
-            
+
             // Book Management
             'view books',
             'create books',
             'edit books',
             'delete books',
-            
+
             // Book Copy Management
             'view book copies',
             'create book copies',
             'edit book copies',
             'delete book copies',
-            
+
             // Loan Management
             'view loans',
             'create loans',
             'return loans',
             'delete loans',
-            
+
             // Category Management
             'view categories',
             'create categories',
             'edit categories',
             'delete categories',
-            
+
             // Genre Management
             'view genres',
             'create genres',
             'edit genres',
             'delete genres',
-            
+
             // Publisher Management
             'view publishers',
             'create publishers',
             'edit publishers',
             'delete publishers',
-            
+
             // Fine Management
             'view fines',
             'waive fines',
             'collect fines',
-            
+
             // Reports
             'view reports',
             'export reports',
-            
+
             // System Settings
             'manage settings',
             'manage roles',
@@ -230,9 +231,9 @@ class RolesPermissionsAndUsersSeeder extends Seeder
             ]
         );
         $superAdminUser->syncRoles(['Super Admin']);
-        
+
         // Create staff profile
-        if (!$superAdminUser->staff) {
+        if (! $superAdminUser->staff) {
             $superAdminUser->staff()->create([
                 'position' => 'System Administrator',
                 'hire_date' => now()->subYears(5),
@@ -253,9 +254,9 @@ class RolesPermissionsAndUsersSeeder extends Seeder
             ]
         );
         $adminUser->syncRoles(['Admin']);
-        
+
         // Create staff profile
-        if (!$adminUser->staff) {
+        if (! $adminUser->staff) {
             $adminUser->staff()->create([
                 'position' => 'Library Administrator',
                 'hire_date' => now()->subYears(3),
@@ -301,8 +302,8 @@ class RolesPermissionsAndUsersSeeder extends Seeder
                 ]
             );
             $librarian->syncRoles(['Librarian']);
-            
-            if (!$librarian->staff) {
+
+            if (! $librarian->staff) {
                 $librarian->staff()->create([
                     'position' => $librarianData['position'],
                     'hire_date' => $librarianData['hire_date'],
@@ -383,8 +384,8 @@ class RolesPermissionsAndUsersSeeder extends Seeder
                 ]
             );
             $member->syncRoles(['Library Members']);
-            
-            if (!$member->member) {
+
+            if (! $member->member) {
                 $member->member()->create([
                     'date_of_birth' => $memberData['dob'],
                     'gender' => $memberData['gender'],
@@ -430,7 +431,7 @@ class RolesPermissionsAndUsersSeeder extends Seeder
         $this->command->info('   Email: sarah@library.com / Password: password');
         $this->command->info('   Email: michael@library.com / Password: password');
         $this->command->info('   Email: emily@library.com / Password: password');
-        $this->command->newLine(); 
+        $this->command->newLine();
 
         $this->command->info('👥 MEMBERS');
         $this->command->info('   Email: john.smith@example.com / Password: password');

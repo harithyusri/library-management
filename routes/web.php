@@ -1,13 +1,10 @@
 <?php
 
-use App\Http\Controllers\Api\BookCopyApiController;
-use App\Http\Controllers\Api\UserApiController;
-use Illuminate\Support\Facades\Route;
-use Laravel\Fortify\Features;
-
-// Shared Controllers (Base or Aliases)
 use App\Http\Controllers\Admin;
 use App\Http\Controllers\Member;
+// Shared Controllers (Base or Aliases)
+use Illuminate\Support\Facades\Route;
+use Laravel\Fortify\Features;
 
 Route::inertia('/', 'Welcome', [
     'canRegister' => Features::enabled(Features::registration()),
@@ -19,7 +16,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // ADMIN ROUTES
     // ==========================================
     Route::prefix('admin')->name('admin.')->group(function () {
-        
+
         Route::get('dashboard', [Admin\DashboardController::class, 'index'])->name('dashboard');
 
         // --- Book Resource Routes ---
@@ -84,6 +81,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('/{user}/edit', [Admin\StaffController::class, 'edit'])->name('edit');
             Route::put('/{user}', [Admin\StaffController::class, 'update'])->name('update');
             Route::delete('/{user}', [Admin\StaffController::class, 'destroy'])->name('destroy');
+        });
+
+        // All Users (Super Admin overview)
+        Route::prefix('users')->middleware(['permission:manage roles'])->name('users.')->group(function () {
+            Route::get('/', [Admin\UserController::class, 'index'])->name('index');
+            Route::get('/{user}', [Admin\UserController::class, 'show'])->name('show');
+            Route::patch('/{user}/toggle-status', [Admin\UserController::class, 'toggleStatus'])->name('toggle-status');
+            Route::patch('/{id}/restore', [Admin\UserController::class, 'restore'])->name('restore');
+            Route::delete('/{id}/force-delete', [Admin\UserController::class, 'forceDelete'])->name('force-delete');
         });
 
         // Role Management
@@ -193,7 +199,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // MEMBER ROUTES
     // ==========================================
     Route::prefix('member')->name('member.')->group(function () {
-        
+
         Route::get('dashboard', [Member\DashboardController::class, 'index'])->name('dashboard');
 
         // Catalog (Discovery & Member Borrowing)
@@ -237,18 +243,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
 
     // Legacy/Old Dashboard Redirect (Optional, helps if people have old bookmarks)
-    Route::get('dashboard', function() {
-        return auth()->user()->isMember() 
-            ? redirect()->route('member.dashboard') 
+    Route::get('dashboard', function () {
+        return auth()->user()->isMember()
+            ? redirect()->route('member.dashboard')
             : redirect()->route('admin.dashboard');
-    });
+    })->name('dashboard');
 
 });
 
-// API routes for book copy search
-Route::prefix('api')->name('api.')->group(function () {
-    Route::get('book-copies/search', [BookCopyApiController::class, 'search'])->name('book-copies.search');
-    Route::get('users/search', [UserApiController::class, 'search'])->name('users.search');
-});
-
-require __DIR__ . '/settings.php';
+require __DIR__.'/settings.php';

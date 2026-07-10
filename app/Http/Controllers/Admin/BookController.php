@@ -3,18 +3,16 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-
 use App\Models\Book;
 use App\Models\BookCopy;
 use App\Models\Category;
 use App\Models\Genre;
 use App\Models\Publisher;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
+use chillerlan\QRCode\Output\QROutputInterface;
 use chillerlan\QRCode\QRCode;
 use chillerlan\QRCode\QROptions;
-use chillerlan\QRCode\Data\QRMatrix;
-use chillerlan\QRCode\Output\QROutputInterface;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
@@ -32,9 +30,9 @@ class BookController extends Controller
         // Search
         if ($request->filled('search')) {
             $query->where(function ($q) use ($request) {
-                $q->where('title', 'like', '%' . $request->search . '%')
-                    ->orWhere('author_name', 'like', '%' . $request->search . '%')
-                    ->orWhere('isbn', 'like', '%' . $request->search . '%');
+                $q->where('title', 'like', '%'.$request->search.'%')
+                    ->orWhere('author_name', 'like', '%'.$request->search.'%')
+                    ->orWhere('isbn', 'like', '%'.$request->search.'%');
             });
         }
 
@@ -81,7 +79,7 @@ class BookController extends Controller
                 'format',
                 'language',
                 'sort_by',
-                'sort_order'
+                'sort_order',
             ]),
             'genres' => Genre::orderBy('name')->get(['id', 'name']),
             'categories' => Category::orderBy('name')->get(['id', 'name']),
@@ -115,13 +113,13 @@ class BookController extends Controller
                 'author_name' => 'required|string|max:255',
                 'isbn' => 'required|string|max:20|unique:books,isbn',
 
-                'genre_ids'   => ['required', 'array', 'min:1'],
+                'genre_ids' => ['required', 'array', 'min:1'],
                 'genre_ids.*' => ['exists:genres,id'],
 
                 'category_id' => 'required|exists:categories,id',
                 'publisher_id' => 'required|exists:publishers,id',
 
-                'published_year' => 'nullable|integer|min:1000|max:' . date('Y'),
+                'published_year' => 'nullable|integer|min:1000|max:'.date('Y'),
                 'format' => 'required|in:hardcover,paperback,ebook,audiobook',
                 'pages' => 'required|integer|min:1',
                 'language' => 'required|string|max:50',
@@ -178,9 +176,8 @@ class BookController extends Controller
         // Handle cover image upload
         if ($request->hasFile('cover_image')) {
             $path = $request->file('cover_image')->store('book-covers', 'public');
-            $validated['cover_image'] = '/storage/' . $path;
+            $validated['cover_image'] = '/storage/'.$path;
         }
-
 
         $book = Book::create($validated);
 
@@ -201,7 +198,7 @@ class BookController extends Controller
             'copies' => function ($query) {
                 $query->with(['borrowedBy:id,name,email', 'library:id,name'])
                     ->orderBy('created_at', 'desc');
-            }
+            },
         ]);
 
         return Inertia::render('admins/Books/Show', [
@@ -237,15 +234,15 @@ class BookController extends Controller
             [
                 'title' => 'required|string|max:255',
                 'author_name' => 'required|string|max:255',
-                'isbn' => 'required|string|max:20|unique:books,isbn,' . $book->id,
+                'isbn' => 'required|string|max:20|unique:books,isbn,'.$book->id,
 
-                'genre_ids'   => ['required', 'array', 'min:1'],
+                'genre_ids' => ['required', 'array', 'min:1'],
                 'genre_ids.*' => ['exists:genres,id'],
 
                 'category_id' => 'required|exists:categories,id',
                 'publisher_id' => 'required|exists:publishers,id',
 
-                'published_year' => 'nullable|integer|min:1000|max:' . date('Y'),
+                'published_year' => 'nullable|integer|min:1000|max:'.date('Y'),
                 'format' => 'required|in:hardcover,paperback,ebook,audiobook',
                 'pages' => 'required|integer|min:1',
                 'language' => 'required|string|max:50',
@@ -302,16 +299,15 @@ class BookController extends Controller
         // Handle cover image upload
         if ($request->hasFile('cover_image')) {
             // Delete old image if exists
-            if ($book->cover_image && !filter_var($book->cover_image, FILTER_VALIDATE_URL)) {
+            if ($book->cover_image && ! filter_var($book->cover_image, FILTER_VALIDATE_URL)) {
                 $oldPath = str_replace('/storage/', '', $book->cover_image);
                 Storage::disk('public')->delete($oldPath);
             }
             $path = $request->file('cover_image')->store('book-covers', 'public');
-            $validated['cover_image'] = '/storage/' . $path;
+            $validated['cover_image'] = '/storage/'.$path;
         } else {
             unset($validated['cover_image']);
         }
-
 
         $book->update($validated);
 
@@ -326,8 +322,9 @@ class BookController extends Controller
     public function destroy(Book $book)
     {
         // Delete cover image if exists
-        if ($book->cover_image && !filter_var($book->cover_image, FILTER_VALIDATE_URL)) {
-            Storage::disk('public')->delete($book->cover_image);
+        if ($book->cover_image && ! filter_var($book->cover_image, FILTER_VALIDATE_URL)) {
+            $oldPath = str_replace('/storage/', '', $book->cover_image);
+            Storage::disk('public')->delete($oldPath);
         }
 
         $book->delete();
@@ -414,7 +411,7 @@ class BookController extends Controller
         $book->load('category');
 
         $callNumber = $this->generateCallNumber($book);
-        
+
         $copy = $book->copies()->create([
             'barcode' => (string) Str::uuid(),
             'condition' => $validated['condition'] ?? 'good',
@@ -482,7 +479,6 @@ class BookController extends Controller
     /**
      * Helper method to generate QR code.
      */
-
     private function generateQRCode(Book $book, BookCopy $copy)
     {
         // 1. Prepare Data
@@ -490,21 +486,21 @@ class BookController extends Controller
             'barcode' => $copy->barcode,
             'book_id' => $book->id,
             'copy_id' => $copy->id,
-            'title'   => $book->title,
-            'author'  => $book->author_name,
-            'isbn'    => $book->isbn,
+            'title' => $book->title,
+            'author' => $book->author_name,
+            'isbn' => $book->isbn,
             'call_number' => $copy->call_number,
         ]);
 
         // 2. Configure Options
         $options = new QROptions([
-            'version'             => QRCode::VERSION_AUTO,
-            'outputType'          => QROutputInterface::GDIMAGE_PNG, // Correct for v5
-            'eccLevel'            => QRCode::ECC_H,
-            'scale'               => 10,
-            'imageBase64'         => false, // Returns raw binary
-            'bgColor'             => [255, 255, 255],
-            'imageTransparent'    => false,
+            'version' => QRCode::VERSION_AUTO,
+            'outputType' => QROutputInterface::GDIMAGE_PNG, // Correct for v5
+            'eccLevel' => QRCode::ECC_H,
+            'scale' => 10,
+            'imageBase64' => false, // Returns raw binary
+            'bgColor' => [255, 255, 255],
+            'imageTransparent' => false,
         ]);
 
         // 3. Generate
@@ -515,7 +511,7 @@ class BookController extends Controller
         $filename = "qr-codes/{$copy->barcode}.png";
 
         // Create directory if missing
-        if (!Storage::disk('public')->exists('qr-codes')) {
+        if (! Storage::disk('public')->exists('qr-codes')) {
             Storage::disk('public')->makeDirectory('qr-codes');
         }
 
