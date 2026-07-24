@@ -23,21 +23,29 @@ class LibraryScope implements Scope
             }
 
             // If the user is staff, only show items from their library
-            if ($user->isStaff() && $user->staff && $user->staff->library_id) {
-                // Announcements can be global (library_id is null)
-                if ($model instanceof \App\Models\Announcement) {
-                    $builder->where(function ($query) use ($user) {
-                        $query->where('library_id', $user->staff->library_id)
-                              ->orWhereNull('library_id');
-                    });
-                } else {
-                    $builder->where('library_id', $user->staff->library_id);
+            if ($user->isStaff()) {
+                // Load the staff relationship if not already loaded
+                if (!$user->relationLoaded('staff')) {
+                    $user->load('staff');
+                }
+                
+                $staff = $user->staff;
+                if ($staff && $staff->library_id) {
+                    $table = $model->getTable();
+
+                    // Announcements can be global (library_id is null)
+                    if ($model instanceof \App\Models\Announcement) {
+                        $builder->where(function ($query) use ($staff, $table) {
+                            $query->where("{$table}.library_id", $staff->library_id)
+                                  ->orWhereNull("{$table}.library_id");
+                        });
+                    } else {
+                        $builder->where("{$table}.library_id", $staff->library_id);
+                    }
                 }
             }
             
-            // Note: Members can see any library, so we don't apply the scope for them 
-            // unless we want to filter by "selected" library, which is better handled 
-            // via manual scopes or a different mechanism.
+            // Members can see any library
         }
     }
 }

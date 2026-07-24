@@ -160,7 +160,7 @@ const getStatusBadge = (status: string) => {
     <AppLayout :breadcrumbs="breadcrumbs">
         <Head title="Loan Reports" />
 
-        <div class="px-6 pt-2 pb-8 space-y-6">
+        <div class="space-y-6">
             <!-- Header Section -->
             <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-2 border-b border-slate-100">
                 <div class="space-y-1">

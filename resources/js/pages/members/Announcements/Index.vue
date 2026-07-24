@@ -65,7 +65,7 @@ const getSnippet = (content: string) => {
     <Head title="Announcements" />
 
     <AppLayout :breadcrumbs="breadcrumbs">
-        <div class="px-6 pt-2 pb-8 space-y-8">
+        <div class="space-y-8">
             <!-- Header Section -->
             <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-2 border-b border-slate-100">
                 <div class="space-y-1">

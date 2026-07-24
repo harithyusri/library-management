@@ -15,6 +15,7 @@ import {
     SelectValue,
 } from '@/components/ui/select'
 import { Plus, BookOpen, LayoutGrid, List, User, Tag, Calendar, Globe, Layers, Book as BookIcon, Eye } from 'lucide-vue-next';
+import { TabsList, TabsTrigger, Tabs } from '@/components/ui/tabs';
 import { Badge } from "@/components/ui/badge";
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -47,6 +48,10 @@ interface Book {
         name: string;
     };
     publisher?: {
+        id: number;
+        name: string;
+    };
+    library?: {
         id: number;
         name: string;
     };
@@ -136,44 +141,26 @@ const formatBookFormat = (format: string): string => {
     <Head title="Books" />
 
     <AppLayout :breadcrumbs="breadcrumbs">
-        <div class="flex flex-1 flex-col gap-6 overflow-x-auto px-6 pt-2 pb-8">
+        <div class="flex flex-1 flex-col gap-6 overflow-x-auto">
 
             <FlashAlert />
             <!-- Header Section -->
             <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-2 border-b border-slate-100">
                 <div class="space-y-1">
-                    <h1 class="text-3xl font-black tracking-tight text-slate-900">Books Inventory <span class="text-indigo-600 text-6xl leading-none">.</span></h1>
-                    <p class="text-slate-500 font-medium">Manage the complete library collection and stock levels.</p>
+                    <h1 class="text-3xl font-black tracking-tight text-yellow-950">Books Inventory <span class="text-primary text-6xl leading-none">.</span></h1>
+                    <p class="text-yellow-800 font-medium">Manage the complete library collection and stock levels.</p>
                 </div>
 
                 <div class="flex items-center gap-3">
-                    <div class="flex items-center rounded-lg border bg-white px-2 py-1 text-sm gap-1 shadow-sm mr-2">
-                        <Button
-                            variant="ghost" size="sm"
-                            class="px-2 rounded-lg font-bold flex items-center gap-2 transition-all"
-                            :class="viewMode === 'grid' ? 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100' : 'text-slate-400 hover:bg-slate-50'"
-                            @click="viewMode = 'grid'"
-                        >
-                            <LayoutGrid class="h-4 w-4" />
-                        </Button>
-                        <Button
-                            variant="ghost" size="sm"
-                            class="px-2 rounded-lg font-bold flex items-center gap-2 transition-all"
-                            :class="viewMode === 'list' ? 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100' : 'text-slate-400 hover:bg-slate-50'"
-                            @click="viewMode = 'list'"
-                        >
-                            <List class="h-4 w-4" />
-                        </Button>
-                    </div>
+                    <Tabs :model-value="viewMode" @update:model-value="val => { viewMode = val as string; }" class="mr-2">
+                        <TabsList>
+                            <TabsTrigger value="grid"><LayoutGrid class="h-4 w-4" /></TabsTrigger>
+                            <TabsTrigger value="list"><List class="h-4 w-4" /></TabsTrigger>
+                        </TabsList>
+                    </Tabs>
 
-                    <Link :href="route('member.catalog.index')" class="contents">
-                        <Button variant="outline" class="border-slate-200 hover:bg-slate-50 rounded-lg px-4 py-2 text-sm font-bold text-slate-600 flex items-center gap-2">
-                            <BookOpen class="h-4 w-4" />
-                            View Catalog
-                        </Button>
-                    </Link>
                     <Link v-if="$page.props.auth.can?.create_books" :href="route('admin.books.create')" class="contents">
-                        <Button class="bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg px-4 py-2 text-sm font-bold shadow-lg shadow-indigo-100 dark:shadow-none flex items-center gap-2">
+                        <Button class="bg-primary hover:opacity-90 text-primary-foreground rounded-lg px-4 py-2 text-sm font-bold flex items-center gap-2">
                             <Plus class="h-4 w-4" />
                             Add New Book
                         </Button>
@@ -253,17 +240,18 @@ const formatBookFormat = (format: string): string => {
                 <!-- Grid View (Smaller Cards) -->
                 <div v-if="viewMode === 'grid'" class="grid gap-4 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
                     <div v-for="book in books.data" :key="book.id"
-                        class="group overflow-hidden rounded-xl border border-slate-100 bg-white transition hover:shadow-xl hover:shadow-indigo-50/50">
+                        class="group relative overflow-hidden rounded-xl border border-border bg-card transition hover:shadow-xl hover:shadow-primary/5">
+                        <Link :href="route('admin.books.show', book.id)" class="absolute inset-0 z-0" aria-label="View book" />
                         <!-- Cover -->
-                        <div class="relative h-48 bg-slate-50 overflow-hidden">
+                        <div class="relative h-48 bg-muted overflow-hidden">
                             <img v-if="book.cover_image" :src="book.cover_image" :alt="book.title"
                                 class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" />
-                            <div v-else class="flex h-full w-full items-center justify-center text-slate-300">
+                            <div v-else class="flex h-full w-full items-center justify-center text-muted-foreground/30">
                                 <BookIcon class="h-10 w-10" />
                             </div>
 
                             <div class="absolute right-1 top-1">
-                                <Badge class="text-[8px] h-5 px-1.5 font-black uppercase bg-white/90 backdrop-blur-sm text-indigo-600 border-0 shadow-sm">
+                                <Badge class="text-[8px] h-5 px-1.5 font-black uppercase bg-card/90 backdrop-blur-sm text-primary border-0 shadow-sm">
                                     {{ formatBookFormat(book.format) }}
                                 </Badge>
                             </div>
@@ -272,23 +260,23 @@ const formatBookFormat = (format: string): string => {
                         <!-- Details (Smaller Cards) -->
                         <div class="p-3 space-y-2">
                             <div>
-                                <h3 class="line-clamp-1 text-[11px] font-black text-slate-900 group-hover:text-indigo-600 transition-colors uppercase tracking-tight">
+                                <h3 class="line-clamp-1 text-[11px] font-black text-foreground group-hover:text-primary transition-colors uppercase tracking-tight">
                                     <Link :href="route('admin.books.show', book.id)">{{ book.title }}</Link>
                                 </h3>
-                                <p class="text-[9px] text-slate-500 font-bold truncate">
+                                <p class="text-[9px] text-muted-foreground font-bold truncate">
                                     by {{ book.author_name }}
                                 </p>
                             </div>
 
                             <div class="flex flex-wrap gap-1">
-                                <Badge variant="secondary" class="text-[8px] h-4 px-1.5 border-0 bg-slate-100 text-slate-500 font-bold uppercase">
+                                <Badge variant="secondary" class="text-[8px] h-4 px-1.5 border-0 bg-muted text-muted-foreground font-bold uppercase">
                                     {{ book.category.name }}
                                 </Badge>
                             </div>
 
-                            <div class="pt-2 flex items-center justify-between border-t border-slate-50">
-                                <span class="text-[8px] font-black text-slate-400 uppercase tracking-widest">{{ book.language }}</span>
-                                <Link :href="route('admin.books.show', book.id)" class="text-[9px] font-black text-indigo-600 hover:text-indigo-800 uppercase tracking-widest">
+                            <div class="pt-2 flex items-center justify-between border-t border-border">
+                                <span class="text-[8px] font-black text-muted-foreground/60 uppercase tracking-widest">{{ book.library?.name ?? 'Unassigned' }}</span>
+                                <Link :href="route('admin.books.show', book.id)" class="relative z-10 text-[9px] font-black text-primary hover:opacity-70 uppercase tracking-widest">
                                     View Book
                                 </Link>
                             </div>
@@ -299,12 +287,13 @@ const formatBookFormat = (format: string): string => {
                 <!-- List View (Row Style) -->
                 <div v-else class="space-y-3">
                     <div v-for="book in books.data" :key="book.id"
-                        class="group flex items-center gap-4 p-3 rounded-xl border border-slate-100 bg-white hover:border-indigo-100 hover:shadow-lg hover:shadow-indigo-50/50 transition-all">
+                        class="group relative flex items-center gap-4 p-3 rounded-xl border border-border bg-card hover:border-primary/20 hover:shadow-lg hover:shadow-primary/5 transition-all">
+                        <Link :href="route('admin.books.show', book.id)" class="absolute inset-0 z-0" aria-label="View book" />
                         <!-- Tiny Thumbnail -->
-                        <Link :href="route('admin.books.show', book.id)" class="shrink-0 h-16 w-12 rounded-lg overflow-hidden bg-slate-50 border border-slate-100 transition-transform group-hover:scale-105">
+                        <Link :href="route('admin.books.show', book.id)" class="relative z-10 shrink-0 h-16 w-12 rounded-lg overflow-hidden bg-muted border border-border transition-transform group-hover:scale-105">
                             <img v-if="book.cover_image" :src="book.cover_image" :alt="book.title"
                                 class="h-full w-full object-cover" />
-                            <div v-else class="flex h-full w-full items-center justify-center text-slate-300">
+                            <div v-else class="flex h-full w-full items-center justify-center text-muted-foreground/30">
                                 <BookIcon class="h-5 w-5" />
                             </div>
                         </Link>
@@ -312,45 +301,49 @@ const formatBookFormat = (format: string): string => {
                         <!-- Main Info -->
                         <div class="flex-1 min-w-0">
                             <div class="flex items-center gap-2 mb-1">
-                                <Badge variant="outline" class="h-4 px-1.5 text-[8px] font-black border-0 bg-emerald-50 text-emerald-600 uppercase tracking-widest">
+                                <Badge variant="outline" class="h-4 px-1.5 text-[8px] font-black border-0 bg-secondary text-secondary-foreground uppercase tracking-widest">
                                     {{ book.category.name }}
                                 </Badge>
                                 <div class="flex gap-1 overflow-hidden">
-                                     <span v-for="genre in book.genres.slice(0, 2)" :key="genre.id" class="text-[8px] font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 uppercase whitespace-nowrap">
+                                     <span v-for="genre in book.genres.slice(0, 2)" :key="genre.id" class="text-[8px] font-bold px-1.5 py-0.5 rounded bg-muted text-muted-foreground uppercase whitespace-nowrap">
                                         {{ genre.name }}
                                     </span>
                                 </div>
                             </div>
-                            <h3 class="text-sm font-black text-slate-900 truncate">
+                            <h3 class="text-sm font-black text-foreground truncate">
                                 <Link :href="route('admin.books.show', book.id)">{{ book.title }}</Link>
                             </h3>
-                            <div class="flex items-center gap-3 text-[10px] text-slate-500 font-bold uppercase tracking-widest">
+                            <div class="flex items-center gap-3 text-[10px] text-muted-foreground font-bold uppercase tracking-widest">
                                 <span>{{ book.author_name }}</span>
-                                <span class="text-slate-300">•</span>
+                                <span class="text-border">•</span>
                                 <span>{{ book.isbn }}</span>
                             </div>
                         </div>
 
                         <!-- Stats & Details -->
-                        <div class="hidden md:flex items-center gap-8 px-6 border-x border-slate-50 h-10">
+                        <div class="hidden md:flex items-center gap-8 px-6 border-x border-border h-10">
                             <div class="flex flex-col">
-                                <span class="text-[8px] text-slate-400 font-black uppercase tracking-widest">Format</span>
-                                <span class="text-[10px] font-bold text-slate-700">{{ formatBookFormat(book.format) }}</span>
+                                <span class="text-[8px] text-muted-foreground/60 font-black uppercase tracking-widest">Library</span>
+                                <span class="text-[10px] font-bold text-foreground">{{ book.library?.name ?? 'Unassigned' }}</span>
                             </div>
                             <div class="flex flex-col">
-                                <span class="text-[8px] text-slate-400 font-black uppercase tracking-widest">Published</span>
-                                <span class="text-[10px] font-bold text-slate-700">{{ book.published_year ?? 'N/A' }}</span>
+                                <span class="text-[8px] text-muted-foreground/60 font-black uppercase tracking-widest">Format</span>
+                                <span class="text-[10px] font-bold text-foreground">{{ formatBookFormat(book.format) }}</span>
                             </div>
                             <div class="flex flex-col">
-                                <span class="text-[8px] text-slate-400 font-black uppercase tracking-widest">Language</span>
-                                <span class="text-[10px] font-bold text-slate-700 uppercase">{{ book.language }}</span>
+                                <span class="text-[8px] text-muted-foreground/60 font-black uppercase tracking-widest">Published</span>
+                                <span class="text-[10px] font-bold text-foreground">{{ book.published_year ?? 'N/A' }}</span>
+                            </div>
+                            <div class="flex flex-col">
+                                <span class="text-[8px] text-muted-foreground/60 font-black uppercase tracking-widest">Language</span>
+                                <span class="text-[10px] font-bold text-foreground uppercase">{{ book.language }}</span>
                             </div>
                         </div>
 
                         <!-- Action -->
-                        <div class="shrink-0 flex items-center pl-2">
+                        <div class="relative z-10 shrink-0 flex items-center pl-2">
                              <Link :href="route('admin.books.show', book.id)">
-                                <Button variant="ghost" size="sm" class="h-9 w-9 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">
+                                <Button variant="ghost" size="sm" class="h-9 w-9 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10">
                                     <Eye class="h-4 w-4" />
                                 </Button>
                             </Link>

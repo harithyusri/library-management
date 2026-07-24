@@ -112,6 +112,8 @@ class HandleInertiaRequests extends Middleware
 
                     'view_audits' => $request->user()->can('view audits'),
 
+                    'view_libraries' => $request->user()->can('view libraries'),
+
                     'view_announcements' => $request->user()->can('view announcements'),
                     'create_announcements' => $request->user()->can('create announcements'),
                     'edit_announcements' => $request->user()->can('edit announcements'),

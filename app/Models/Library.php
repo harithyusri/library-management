@@ -33,6 +33,16 @@ class Library extends Model
         return $this->hasMany(BookCopy::class);
     }
 
+    public function books(): HasMany
+    {
+        return $this->hasMany(Book::class);
+    }
+
+    public function departments(): HasMany
+    {
+        return $this->hasMany(Department::class);
+    }
+
     public function rooms(): HasMany
     {
         return $this->hasMany(Room::class);

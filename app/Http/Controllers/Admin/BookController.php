@@ -25,7 +25,7 @@ class BookController extends Controller
     public function index(Request $request)
     {
         $query = Book::query()
-            ->with(['genres', 'category', 'publisher']);
+            ->with(['genres', 'category', 'publisher', 'library']);
 
         // Search
         if ($request->filled('search')) {
@@ -97,6 +97,7 @@ class BookController extends Controller
             'genres' => Genre::orderBy('name')->get(['id', 'name']),
             'categories' => Category::orderBy('name')->get(['id', 'name']),
             'publishers' => Publisher::orderBy('name')->get(['id', 'name', 'country']),
+            'libraries' => \App\Models\Library::orderBy('name')->get(['id', 'name']),
             'formatOptions' => Book::getFormatOptions(),
             'languageOptions' => Book::getLanguageOptions(),
         ]);
@@ -118,6 +119,7 @@ class BookController extends Controller
 
                 'category_id' => 'required|exists:categories,id',
                 'publisher_id' => 'required|exists:publishers,id',
+                'library_id' => 'nullable|exists:libraries,id',
 
                 'published_year' => 'nullable|integer|min:1000|max:'.date('Y'),
                 'format' => 'required|in:hardcover,paperback,ebook,audiobook',
@@ -183,7 +185,7 @@ class BookController extends Controller
 
         $book->genres()->sync($genreIds);
 
-        return redirect()->route('books.show')->with('success', 'Book created successfully!');
+        return redirect()->route('admin.books.show')->with('success', 'Book created successfully!');
     }
 
     /**
@@ -220,6 +222,7 @@ class BookController extends Controller
             'genres' => Genre::orderBy('name')->get(['id', 'name']),
             'categories' => Category::orderBy('name')->get(['id', 'name']),
             'publishers' => Publisher::orderBy('name')->get(['id', 'name', 'country']),
+            'libraries' => \App\Models\Library::orderBy('name')->get(['id', 'name']),
             'formatOptions' => Book::getFormatOptions(),
             'languageOptions' => Book::getLanguageOptions(),
         ]);
@@ -241,6 +244,7 @@ class BookController extends Controller
 
                 'category_id' => 'required|exists:categories,id',
                 'publisher_id' => 'required|exists:publishers,id',
+                'library_id' => 'nullable|exists:libraries,id',
 
                 'published_year' => 'nullable|integer|min:1000|max:'.date('Y'),
                 'format' => 'required|in:hardcover,paperback,ebook,audiobook',
@@ -313,7 +317,7 @@ class BookController extends Controller
 
         $book->genres()->sync($genreIds);
 
-        return redirect()->route('books.show')->with('success', 'Book updated successfully.');
+        return redirect()->route('admin.books.show')->with('success', 'Book updated successfully.');
     }
 
     /**

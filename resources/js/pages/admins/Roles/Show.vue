@@ -121,7 +121,7 @@ function formatCategoryName(category: string): string {
     <Head :title="`${role.name} Role`" />
 
     <AppLayout :breadcrumbs="breadcrumbs">
-        <div class="flex flex-1 flex-col gap-6 overflow-x-auto p-4">
+        <div class="flex flex-1 flex-col gap-6 overflow-x-auto">
 
             <FlashAlert />
 

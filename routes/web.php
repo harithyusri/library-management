@@ -39,6 +39,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         Route::get('scan/{barcode}', [Admin\BookController::class, 'scanBarcode'])->name('books.scan');
 
+        // Book Copy Search (AJAX)
+        Route::get('book-copies/search', [Admin\LoanController::class, 'searchBookCopies'])->name('book-copies.search');
+
         // Catalog Management (Admin)
         Route::middleware(['permission:view categories'])->group(function () {
             Route::prefix('categories')->name('categories.')->group(function () {
@@ -85,6 +88,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         // All Users (Super Admin overview)
         Route::prefix('users')->middleware(['permission:manage roles'])->name('users.')->group(function () {
+            Route::get('/search', [Admin\UserController::class, 'search'])->name('search');
             Route::get('/', [Admin\UserController::class, 'index'])->name('index');
             Route::get('/{user}', [Admin\UserController::class, 'show'])->name('show');
             Route::patch('/{user}/toggle-status', [Admin\UserController::class, 'toggleStatus'])->name('toggle-status');

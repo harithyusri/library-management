@@ -108,7 +108,7 @@ const getRoomTypeColor = (type: string) => {
     <Head title="Book A Room" />
 
     <AppLayout :breadcrumbs="breadcrumbs">
-        <div class="px-6 pt-2 pb-8 space-y-8">
+        <div class="space-y-8">
             
             <!-- Header Section -->
             <div class="space-y-1">

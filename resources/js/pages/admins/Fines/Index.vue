@@ -106,22 +106,22 @@ const onFileChange = (e: Event) => {
 <template>
     <Head title="Fines & Payments" />
     <AppLayout :breadcrumbs="breadcrumbs">
-        <div class="px-6 pt-2 pb-8 space-y-6">
+        <div class="space-y-6">
             <!-- Header Section -->
-            <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-2 border-b border-slate-100">
+            <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-2 border-b border-border">
                 <div class="space-y-1">
-                    <h1 class="text-3xl font-black tracking-tight text-slate-900">Fines & Payments <span class="text-indigo-600 text-6xl leading-none">.</span></h1>
-                    <p class="text-slate-500 font-medium">Monitor overdue penalties and manage member payment records.</p>
+                    <h1 class="text-3xl font-black tracking-tight text-foreground">Fines & Payments <span class="text-primary text-6xl leading-none">.</span></h1>
+                    <p class="text-yellow-800 font-medium">Monitor overdue penalties and manage member payment records.</p>
                 </div>
 
                 <div class="flex items-center gap-3">
                     <div class="relative w-full md:w-80 h-11">
-                        <Search class="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                        <Search class="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input
                             v-model="searchQuery"
                             type="search"
                             placeholder="Search by member name..."
-                            class="pl-11 h-full bg-white border-slate-200 rounded-xl focus-visible:ring-indigo-500 shadow-sm"
+                            class="pl-11 h-full bg-background border-input rounded-xl focus-visible:ring-ring"
                         />
                     </div>
                 </div>

@@ -52,7 +52,7 @@ interface Loan {
     due_date: string;
     returned_date: string | null;
     status: 'active' | 'returned' | 'overdue';
-    book_copy: BookCopy;
+    book_copy: BookCopy | null;
     user: User;
 }
 
@@ -162,19 +162,19 @@ const getDaysUntilDue = (dueDate: string, returnedDate: string | null | undefine
     <Head title="Book Loans" />
 
     <AppLayout :breadcrumbs="breadcrumbs">
-        <div class="px-6 pt-2 pb-8 space-y-6">
+        <div class="space-y-6">
             <FlashAlert />
 
             <!-- Header Section -->
             <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-2 border-b border-slate-100">
                 <div class="space-y-1">
-                    <h1 class="text-3xl font-black tracking-tight text-slate-900">Book Loans <span class="text-indigo-600 text-6xl leading-none">.</span></h1>
-                    <p class="text-slate-500 font-medium">Monitor active circulations and overdue tracking.</p>
+                    <h1 class="text-3xl font-black tracking-tight text-yellow-950">Book Loans <span class="text-primary text-6xl leading-none">.</span></h1>
+                    <p class="text-yellow-800 font-medium">Monitor active circulations and overdue tracking.</p>
                 </div>
 
                 <div class="flex items-center gap-3">
                     <Link :href="route('admin.loans.create')" class="contents">
-                        <Button class="bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg px-4 py-2 text-sm font-bold shadow-lg shadow-indigo-100 dark:shadow-none flex items-center gap-2">
+                        <Button class="bg-primary hover:opacity-90 text-primary-foreground rounded-lg px-4 py-2 text-sm font-bold flex items-center gap-2">
                             <Plus class="h-4 w-4" />
                             Issue New Loan
                         </Button>
@@ -236,14 +236,13 @@ const getDaysUntilDue = (dueDate: string, returnedDate: string | null | undefine
                                             <div class="text-xs text-muted-foreground">{{ loan.user.email }}</div>
                                         </TableCell>
                                         <TableCell>
-                                            <div class="font-medium">{{ loan.book_copy.book.title }}</div>
-                                            <div class="text-xs text-muted-foreground">by {{
-                                                loan.book_copy.book.author_name }}</div>
+                                            <div class="font-medium">{{ loan.book_copy?.book?.title ?? '—' }}</div>
+                                            <div class="text-xs text-muted-foreground">by {{ loan.book_copy?.book?.author_name ?? 'Unknown' }}</div>
                                         </TableCell>
                                         <TableCell>
                                             <code class="rounded bg-muted px-2 py-1 text-xs font-mono">
-                                                    {{ loan.book_copy.call_number }}
-                                                </code>
+                                                {{ loan.book_copy?.call_number ?? '—' }}
+                                            </code>
                                         </TableCell>
                                         <TableCell>{{ formatDate(loan.borrowed_date) }}</TableCell>
                                         <TableCell>

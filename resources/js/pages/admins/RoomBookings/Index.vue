@@ -6,12 +6,13 @@ import { type BreadcrumbItem } from '@/types';
 import AppLayout from '@/layouts/AppLayout.vue';
 import FlashAlert from '@/components/FlashAlert.vue';
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import {
     Calendar as CalendarIcon, ChevronLeft, ChevronRight,
-    Plus, Clock, DoorOpen, User, List, LayoutGrid,
+    Plus, Clock, DoorOpen, User, List, CalendarDays,
 } from 'lucide-vue-next';
 
 interface Booking {
@@ -139,41 +140,27 @@ const allSorted = computed(() =>
 <template>
     <Head title="Room Bookings" />
     <AppLayout :breadcrumbs="breadcrumbs">
-        <div class="px-6 pt-2 pb-8 space-y-6">
+        <div class="space-y-6">
             <FlashAlert />
 
             <!-- Header Section -->
             <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-2 border-b border-slate-100">
                 <div class="space-y-1">
-                    <h1 class="text-3xl font-black tracking-tight text-slate-900">Room Bookings <span class="text-indigo-600 text-6xl leading-none">.</span></h1>
-                    <p class="text-slate-500 font-medium">Manage and view all room reservations and utilization.</p>
+                    <h1 class="text-3xl font-black tracking-tight text-yellow-950">Room Bookings <span class="text-primary text-6xl leading-none">.</span></h1>
+                    <p class="text-yellow-800 font-medium">Manage and view all room reservations and utilization.</p>
                 </div>
 
                 <div class="flex items-center gap-3">
                     <!-- View toggle -->
-                    <div class="flex items-center rounded-lg border bg-white px-2 py-1 text-sm gap-1 shadow-sm">
-                        <Button
-                            variant="ghost" size="sm"
-                            class="px-2 rounded-lg font-bold flex items-center gap-2 transition-all"
-                            :class="view === 'calendar' ? 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100' : 'text-slate-400 hover:bg-slate-50'"
-                            @click="view = 'calendar'"
-                        >
-                            <LayoutGrid class="h-4 w-4" />
-                            Calendar
-                        </Button>
-                        <Button
-                            variant="ghost" size="sm"
-                            class="px-2 rounded-lg font-bold flex items-center gap-2 transition-all"
-                            :class="view === 'list' ? 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100' : 'text-slate-400 hover:bg-slate-50'"
-                            @click="view = 'list'"
-                        >
-                            <List class="h-4 w-4" />
-                            List View
-                        </Button>
-                    </div>
+                    <Tabs :model-value="view" @update:model-value="val => { view = val as 'calendar' | 'list'; }" class="mr-2">
+                        <TabsList>
+                            <TabsTrigger value="calendar"><CalendarDays class="h-4 w-4" /></TabsTrigger>
+                            <TabsTrigger value="list"><List class="h-4 w-4" /></TabsTrigger>
+                        </TabsList>
+                    </Tabs>
 
                     <Link v-if="can.createBookings" :href="route('admin.room-bookings.create')" class="contents">
-                        <Button class="bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg px-4 py-2 text-sm font-bold shadow-lg shadow-indigo-100 dark:shadow-none flex items-center gap-2">
+                        <Button class="bg-primary hover:opacity-90 text-primary-foreground rounded-lg px-4 py-2 text-sm font-bold flex items-center gap-2">
                             <Plus class="h-5 w-5" />
                             New Booking
                         </Button>

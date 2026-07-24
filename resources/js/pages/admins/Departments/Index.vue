@@ -34,6 +34,8 @@ interface Department {
     name: string;
     code: string | null;
     description: string | null;
+    library_id: number | null;
+    library?: { id: number; name: string } | null;
     staff_count: number;
 }
 
@@ -45,8 +47,14 @@ interface PaginatedDepartments {
     total: number;
 }
 
+interface Library {
+    id: number;
+    name: string;
+}
+
 const props = defineProps<{
     departments: PaginatedDepartments;
+    libraries: Library[];
     filters: { search?: string };
 }>();
 
@@ -67,6 +75,7 @@ const form = reactive({
     name: '',
     code: '',
     description: '',
+    library_id: '',
 });
 
 const openCreateDialog = () => {
@@ -75,6 +84,7 @@ const openCreateDialog = () => {
     form.name = '';
     form.code = '';
     form.description = '';
+    form.library_id = '';
     isDialogOpen.value = true;
 };
 
@@ -84,6 +94,7 @@ const openEditDialog = (dept: Department) => {
     form.name = dept.name;
     form.code = dept.code ?? '';
     form.description = dept.description ?? '';
+    form.library_id = dept.library_id ? String(dept.library_id) : '';
     isDialogOpen.value = true;
 };
 
@@ -139,7 +150,7 @@ const clearSearch = () => {
     <Head title="Manage Departments" />
 
     <AppLayout :breadcrumbs="breadcrumbs">
-        <div class="px-6 pt-2 pb-8 space-y-6">
+        <div class="space-y-6">
             <FlashAlert />
 
             <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-2 border-b border-slate-100">
@@ -185,6 +196,7 @@ const clearSearch = () => {
                                 <TableRow>
                                     <TableHead class="w-[100px]">Code</TableHead>
                                     <TableHead>Department Name</TableHead>
+                                    <TableHead>Library</TableHead>
                                     <TableHead>Staff Count</TableHead>
                                     <TableHead class="text-right">Actions</TableHead>
                                 </TableRow>
@@ -197,6 +209,10 @@ const clearSearch = () => {
                                     <TableCell>
                                         <div class="font-black text-slate-900">{{ dept.name }}</div>
                                         <div v-if="dept.description" class="text-[10px] text-slate-500 mt-0.5 line-clamp-1 truncate max-w-xs">{{ dept.description }}</div>
+                                    </TableCell>
+                                    <TableCell>
+                                        <span v-if="dept.library" class="text-xs font-medium text-slate-700">{{ dept.library.name }}</span>
+                                        <span v-else class="text-xs text-slate-400">Unassigned</span>
                                     </TableCell>
                                     <TableCell>
                                         <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600">
@@ -251,6 +267,15 @@ const clearSearch = () => {
                 </DialogHeader>
 
                 <div class="space-y-4 py-4">
+                    <div class="space-y-2">
+                        <Label class="text-[10px] font-black uppercase tracking-widest text-slate-400">Library</Label>
+                        <select v-model="form.library_id" class="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm">
+                            <option value="">Select library...</option>
+                            <option v-for="library in props.libraries" :key="library.id" :value="String(library.id)">
+                                {{ library.name }}
+                            </option>
+                        </select>
+                    </div>
                     <div class="space-y-2">
                         <Label class="text-[10px] font-black uppercase tracking-widest text-slate-400">Department Name</Label>
                         <Input v-model="form.name" placeholder="e.g. Information Technology" class="rounded-xl" />

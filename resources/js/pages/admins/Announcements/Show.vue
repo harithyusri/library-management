@@ -40,7 +40,7 @@ const deleteAnnouncement = () => {
     <Head :title="announcement.title" />
 
     <AppLayout :breadcrumbs="breadcrumbs">
-        <div class="flex flex-1 flex-col p-4 max-w-5xl mx-auto w-full">
+        <div class="flex flex-1 flex-col max-w-5xl mx-auto w-full">
             
             <div class="mb-4">
                 <Link :href="route('admin.announcements.index')" class="inline-flex items-center text-sm font-medium text-muted-foreground hover:text-foreground">

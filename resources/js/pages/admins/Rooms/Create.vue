@@ -124,19 +124,14 @@ const submit = () => {
     <Head title="Add Room" />
 
     <AppLayout :breadcrumbs="breadcrumbs">
-        <div class="max-w-4xl mx-auto px-4 py-8 space-y-6">
+        <div class="space-y-6">
             <FlashAlert />
 
             <!-- Page Header -->
-            <div class="flex items-center justify-between">
-                <div>
-                    <h1 class="text-2xl font-semibold text-foreground flex items-center gap-2">
-                        <DoorOpen class="h-6 w-6" />
-                        Add New Room
-                    </h1>
-                    <p class="text-sm text-muted-foreground mt-1">
-                        Configure a new library room or facility.
-                    </p>
+            <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-2 border-b border-slate-100">
+                <div class="space-y-1">
+                    <h1 class="text-3xl font-black tracking-tight text-slate-900">Add New Room <span class="text-primary text-6xl leading-none">.</span></h1>
+                    <p class="text-yellow-800 font-medium">Configure a new library room or facility.</p>
                 </div>
                 <Link :href="route('admin.rooms.index')">
                     <Button variant="outline" size="sm">Cancel</Button>
@@ -176,7 +171,7 @@ const submit = () => {
                         </div>
 
                         <div class="space-y-2">
-                            <Label>Library Branch <span class="text-destructive">*</span></Label>
+                            <Label>Library <span class="text-destructive">*</span></Label>
                             <Select v-model="form.library_id">
                                 <SelectTrigger :class="{ 'border-destructive': form.errors.library_id }">
                                     <SelectValue placeholder="Select library" />

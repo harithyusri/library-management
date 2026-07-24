@@ -175,7 +175,7 @@ const formatDate = (date: string): string => {
     <Head title="Admins & Staff" />
 
     <AppLayout :breadcrumbs="breadcrumbs">
-        <div class="px-6 pt-2 pb-8 space-y-6">
+        <div class="space-y-6">
 
             <FlashAlert />
 

@@ -2,7 +2,6 @@
 import { ref, computed, watch, type Ref } from 'vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import { index, store } from '@/routes/admin/room-bookings';
-import { search as searchUsersRoute } from '@/routes/api/users';
 import { type BreadcrumbItem } from '@/types';
 import AppLayout from '@/layouts/AppLayout.vue';
 import FlashAlert from '@/components/FlashAlert.vue';
@@ -102,7 +101,7 @@ const searchUsers = async () => {
     }
     isSearchingUsers.value = true;
     try {
-        const res = await axios.get(searchUsersRoute.url(), { params: { q: userSearchQ.value } });
+        const res = await axios.get('/admin/users/search', { params: { q: userSearchQ.value } });
         userSearchResults.value = res.data.data;
     } catch (err) {
         console.error('User search failed', err);
@@ -211,14 +210,14 @@ const submit = () => {
     <AppLayout :breadcrumbs="breadcrumbs">
         <Head title="New Booking" />
         
-        <div class="px-6 pt-2 pb-8 space-y-6">
+        <div class="space-y-6">
             <FlashAlert />
 
             <!-- Header -->
             <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-2 border-b border-slate-100">
                 <div class="space-y-1">
-                    <h1 class="text-3xl font-black tracking-tight text-slate-900">New Room Booking <span class="text-indigo-600 text-6xl leading-none">.</span></h1>
-                    <p class="text-slate-500 font-medium">Reserve a room for your session.</p>
+                    <h1 class="text-3xl font-black tracking-tight text-slate-900">New Room Booking <span class="text-primary text-6xl leading-none">.</span></h1>
+                    <p class="text-yellow-800 font-medium">Reserve a room for your session.</p>
                 </div>
             </div>
 

@@ -128,7 +128,7 @@ onUnmounted(() => {
     <Head :title="book.title" />
 
     <AppLayout :breadcrumbs="breadcrumbs">
-        <div class="px-6 pt-2 pb-8 space-y-8">
+        <div class="space-y-8">
             <FlashAlert />
 
             <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-2">

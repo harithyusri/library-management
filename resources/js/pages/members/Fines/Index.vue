@@ -56,7 +56,7 @@ const getStatusBadge = (status: string) => {
     <Head title="My Fines" />
 
     <AppLayout :breadcrumbs="breadcrumbs">
-        <div class="px-6 pt-2 pb-8 space-y-8">
+        <div class="space-y-8">
             <FlashAlert />
 
             <!-- Header Section -->

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Traits\HasLibrary;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use OwenIt\Auditing\Contracts\Auditable;
@@ -9,7 +10,7 @@ use OwenIt\Auditing\Auditable as AuditableTrait;
 
 class Book extends Model implements Auditable
 {
-    use SoftDeletes, AuditableTrait;
+    use SoftDeletes, AuditableTrait, HasLibrary;
 
     protected $fillable = [
         'title',
@@ -24,6 +25,7 @@ class Book extends Model implements Auditable
         'language',
         'description',
         'cover_image',
+        'library_id',
     ];
 
     protected $casts = [

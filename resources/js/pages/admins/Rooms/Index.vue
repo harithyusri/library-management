@@ -111,19 +111,19 @@ const statusConfig: Record<string, { variant: 'default' | 'secondary' | 'destruc
     <Head title="Rooms" />
 
     <AppLayout :breadcrumbs="breadcrumbs">
-        <div class="px-6 pt-2 pb-8 space-y-6">
+        <div class="space-y-6">
             <FlashAlert />
 
             <!-- Header Section -->
-            <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-2 border-b border-slate-100">
+            <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-2 border-b border-border">
                 <div class="space-y-1">
-                    <h1 class="text-3xl font-black tracking-tight text-slate-900">Room Management <span class="text-indigo-600 text-6xl leading-none">.</span></h1>
-                    <p class="text-slate-500 font-medium">Manage library rooms, study areas, and facility equipment.</p>
+                    <h1 class="text-3xl font-black tracking-tight text-foreground">Room Management <span class="text-primary text-6xl leading-none">.</span></h1>
+                    <p class="text-muted-foreground font-medium">Manage library rooms, study areas, and facility equipment.</p>
                 </div>
 
                 <div class="flex items-center gap-3">
                     <Link v-if="can.createRooms" :href="route('admin.rooms.create')" class="contents">
-                        <Button class="bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg px-4 py-2 text-sm font-bold shadow-lg shadow-indigo-100 dark:shadow-none flex items-center gap-2">
+                        <Button class="bg-primary hover:opacity-90 text-primary-foreground rounded-lg px-4 py-2 text-sm font-bold flex items-center gap-2">
                             <Plus class="h-5 w-5" />
                             Add New Room
                         </Button>
@@ -132,80 +132,78 @@ const statusConfig: Record<string, { variant: 'default' | 'secondary' | 'destruc
             </div>
 
             <!-- Enhanced Filters -->
-            <Card class="border-none shadow-sm bg-muted/30">
-                <CardContent class="p-4 md:p-6 space-y-4">
-                    <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
-                        <!-- Search term -->
-                        <div class="md:col-span-5 space-y-2">
-                            <Label class="text-xs font-medium text-muted-foreground uppercase tracking-wider">Search Rooms</Label>
-                            <div class="relative">
-                                <Search class="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                                <Input
-                                    v-model="searchForm.search"
-                                    placeholder="Search by name, number, or description..."
-                                    class="pl-9 bg-background"
-                                    @input="debounceSearch"
-                                />
-                            </div>
-                        </div>
-
-                        <!-- Type Filter -->
-                        <div class="md:col-span-3 space-y-2">
-                            <Label class="text-xs font-medium text-muted-foreground uppercase tracking-wider">Room Type</Label>
-                            <Select v-model="searchForm.type">
-                                <SelectTrigger class="bg-background">
-                                    <SelectValue placeholder="All types" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">All Types</SelectItem>
-                                    <SelectItem v-for="(label, key) in types" :key="key" :value="key">
-                                        {{ label }}
-                                    </SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-
-                        <!-- Capacity Filter -->
-                        <div class="md:col-span-2 space-y-2">
-                            <Label class="text-xs font-medium text-muted-foreground uppercase tracking-wider">Min. Capacity</Label>
-                            <div class="relative">
-                                <Users class="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                                <Input
-                                    v-model="searchForm.min_capacity"
-                                    type="number"
-                                    placeholder="Min pax"
-                                    class="pl-9 bg-background"
-                                    @input="debounceSearch"
-                                />
-                            </div>
-                        </div>
-
-                        <!-- Reset button -->
-                        <div class="md:col-span-2">
-                            <Button
-                                variant="outline"
-                                class="w-full gap-2 bg-background border-dashed"
-                                @click="clearFilters"
-                            >
-                                <RotateCcw class="h-4 w-4" />
-                                Reset
-                            </Button>
+            <div class="space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
+                    <!-- Search term -->
+                    <div class="md:col-span-5 space-y-2">
+                        <Label class="text-xs font-medium text-muted-foreground uppercase tracking-wider">Search Rooms</Label>
+                        <div class="relative">
+                            <Search class="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                            <Input
+                                v-model="searchForm.search"
+                                placeholder="Search by name, number, or description..."
+                                class="pl-9 bg-background"
+                                @input="debounceSearch"
+                            />
                         </div>
                     </div>
 
-                    <Separator class="bg-border/50" />
+                    <!-- Type Filter -->
+                    <div class="md:col-span-3 space-y-2">
+                        <Label class="text-xs font-medium text-muted-foreground uppercase tracking-wider">Room Type</Label>
+                        <Select v-model="searchForm.type">
+                            <SelectTrigger class="bg-background">
+                                <SelectValue placeholder="All types" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All Types</SelectItem>
+                                <SelectItem v-for="(label, key) in types" :key="key" :value="key">
+                                    {{ label }}
+                                </SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
 
-                    <!-- Status Tabs -->
-                    <Tabs v-model="searchForm.status" class="w-full">
-                        <TabsList class="bg-background/50 border h-10 p-1">
-                            <TabsTrigger value="all" class="px-6">All Statuses</TabsTrigger>
-                            <TabsTrigger v-for="(label, key) in statuses" :key="key" :value="key" class="px-6">
-                                {{ label }}
-                            </TabsTrigger>
-                        </TabsList>
-                    </Tabs>
-                </CardContent>
-            </Card>
+                    <!-- Capacity Filter -->
+                    <div class="md:col-span-2 space-y-2">
+                        <Label class="text-xs font-medium text-muted-foreground uppercase tracking-wider">Min. Capacity</Label>
+                        <div class="relative">
+                            <Users class="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                            <Input
+                                v-model="searchForm.min_capacity"
+                                type="number"
+                                placeholder="Min pax"
+                                class="pl-9 bg-background"
+                                @input="debounceSearch"
+                            />
+                        </div>
+                    </div>
+
+                    <!-- Reset button -->
+                    <div class="md:col-span-2">
+                        <Button
+                            variant="outline"
+                            class="w-full gap-2 bg-background border-dashed"
+                            @click="clearFilters"
+                        >
+                            <RotateCcw class="h-4 w-4" />
+                            Reset
+                        </Button>
+                    </div>
+                </div>
+
+                <Separator class="bg-border/50" />
+
+                <!-- Status Tabs -->
+                <Tabs v-model="searchForm.status" class="w-full">
+                    <TabsList>
+                        <TabsTrigger value="all">All Statuses</TabsTrigger>
+                        <TabsTrigger v-for="(label, key) in statuses" :key="key" :value="key">
+                            {{ label }}
+                        </TabsTrigger>
+                    </TabsList>
+                </Tabs>
+            </div>
 
             <!-- Table Card -->
             <Card class="overflow-hidden border-none shadow-sm">

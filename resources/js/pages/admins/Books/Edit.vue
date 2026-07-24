@@ -68,6 +68,11 @@ interface Publisher {
     country?: string;
 }
 
+interface Library {
+    id: number;
+    name: string;
+}
+
 interface Book {
     id: number;
     title?: string;
@@ -76,6 +81,7 @@ interface Book {
     genres?: Genre[];
     category_id?: number | null;
     publisher_id?: number | null;
+    library_id?: number | null;
     published_year?: number | null;
     format?: string;
     pages?: number | null;
@@ -92,6 +98,7 @@ const props = defineProps<{
     genres: Genre[];
     categories: Category[];
     publishers: Publisher[];
+    libraries: Library[];
     formatOptions: Record<string, string>;
     languageOptions: Record<string, string>;
 }>();
@@ -108,6 +115,7 @@ const form = useForm({
         : [],
     category_id: props.book.category_id ? String(props.book.category_id) : '',
     publisher_id: props.book.publisher_id ? String(props.book.publisher_id) : '',
+    library_id: props.book.library_id ? String(props.book.library_id) : '',
     published_year: props.book.published_year ? String(props.book.published_year) : '',
     format: props.book.format ?? '',
     pages: props.book.pages ? String(props.book.pages) : '',
@@ -254,7 +262,7 @@ const submitPublisher = () => {
     <Head :title="`Edit Book - ${props.book.title ?? ''}`" />
 
     <AppLayout :breadcrumbs="breadcrumbs">
-        <div class="flex flex-1 flex-col gap-6 overflow-x-auto p-4">
+        <div class="flex flex-1 flex-col gap-6 overflow-x-auto">
 
             <FlashAlert />
             <!-- Header -->
@@ -277,6 +285,23 @@ const submitPublisher = () => {
                     </h2>
 
                     <div class="grid gap-6 md:grid-cols-2">
+
+                        <!-- Library -->
+                        <div class="md:col-span-2">
+                            <label class="mb-2 block text-sm font-medium text-foreground">
+                                Library <span class="text-destructive">*</span>
+                            </label>
+                            <select v-model="form.library_id" class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring"
+                                :class="{ 'border-destructive': form.errors.library_id }">
+                                <option value="">Select library...</option>
+                                <option v-for="library in props.libraries" :key="library.id" :value="String(library.id)">
+                                    {{ library.name }}
+                                </option>
+                            </select>
+                            <p v-if="form.errors.library_id" class="mt-1 text-xs text-destructive">
+                                {{ form.errors.library_id }}
+                            </p>
+                        </div>
 
                         <!-- Title -->
                         <div class="md:col-span-2">

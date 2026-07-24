@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 
 use App\Models\Department;
+use App\Models\Library;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -28,10 +29,11 @@ class DepartmentController extends Controller
             });
         }
 
-        $departments = $query->orderBy('name')->paginate(15)->withQueryString();
+        $departments = $query->with('library:id,name')->orderBy('name')->paginate(15)->withQueryString();
 
         return Inertia::render('admins/Departments/Index', [
             'departments' => $departments,
+            'libraries' => Library::orderBy('name')->get(['id', 'name']),
             'filters' => $request->only(['search']),
         ]);
     }
@@ -49,6 +51,7 @@ class DepartmentController extends Controller
             'name' => ['required', 'string', 'max:100'],
             'code' => ['nullable', 'string', 'max:20', 'unique:departments'],
             'description' => ['nullable', 'string'],
+            'library_id' => ['nullable', 'exists:libraries,id'],
         ]);
 
         $department = Department::create($validated);
@@ -72,6 +75,7 @@ class DepartmentController extends Controller
             'name' => ['required', 'string', 'max:100'],
             'code' => ['nullable', 'string', 'max:20', 'unique:departments,code,' . $department->id],
             'description' => ['nullable', 'string'],
+            'library_id' => ['nullable', 'exists:libraries,id'],
         ]);
 
         $department->update($validated);

@@ -2,7 +2,6 @@
 import { ref, reactive, computed, onMounted, onUnmounted, type Ref } from 'vue';
 import { router, useForm, Head } from '@inertiajs/vue3';
 import { index, store } from '@/routes/admin/loans';
-import { search as searchBookCopiesRoute } from '@/routes/api/book-copies';
 import type { DateValue } from '@internationalized/date';
 import { CalendarDate, fromDate, getLocalTimeZone, toCalendarDate } from '@internationalized/date';
 import { type BreadcrumbItem } from '@/types';
@@ -10,7 +9,6 @@ import AppLayout from '@/layouts/AppLayout.vue';
 import FlashAlert from '@/components/FlashAlert.vue';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -181,9 +179,12 @@ const handleSearchChange = (event: Event) => {
 
     searchTimeout = setTimeout(async () => {
         try {
-            const response = await fetch(
-                searchBookCopiesRoute.url({ query: { q: trimmedQuery } })
-            );
+            const response = await fetch(`/admin/book-copies/search?q=${encodeURIComponent(trimmedQuery)}`, {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+            });
             const data = await response.json();
             copySearchResults.value = data.data || [];
         } catch (error) {
@@ -241,34 +242,23 @@ onUnmounted(() => {
     <Head title="Create Loan" />
 
     <AppLayout :breadcrumbs="breadcrumbs">
-        <div class="flex flex-1 flex-col gap-6 overflow-x-auto p-4">
+        <div class="space-y-6">
 
             <FlashAlert />
-
             <!-- Header -->
-            <div class="flex flex-col gap-2">
-                <h1 class="text-2xl font-semibold text-foreground">
-                    Create New Loan
-                </h1>
-                <p class="text-sm text-muted-foreground">
-                    Issue a book to a borrower
-                </p>
+            <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-2 border-b border-border">
+                <div class="space-y-1">
+                    <h1 class="text-3xl font-black tracking-tight text-foreground">Create New Loan <span class="text-primary text-6xl leading-none">.</span></h1>
+                    <p class="text-muted-foreground font-medium">Issue a book to a borrower</p>
+                </div>
             </div>
-
-            <hr>
 
             <!-- Form -->
             <form @submit.prevent="submitForm" class="space-y-6">
 
                 <!-- Borrower Selection -->
-                <CardHeader>
-                    <CardTitle>Select Borrower</CardTitle>
-                    <CardDescription>
-                        Choose the user who will borrow the book
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <div class="space-y-4">
+                <h2 class="mb-4 text-lg font-semibold text-foreground">Select Borrower</h2>
+                <div class="space-y-4">
                         <div>
                             <Label for="user">
                                 Borrower <span class="text-destructive">*</span>
@@ -324,17 +314,11 @@ onUnmounted(() => {
                             </div>
                         </div>
                     </div>
-                </CardContent>
 
                 <!-- Book Copy Selection -->
-                <CardHeader>
-                    <CardTitle>Select Book Copy</CardTitle>
-                    <CardDescription>
-                        Search for an available book copy by title, barcode, or ISBN
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <div class="space-y-4">
+                <h2 class="mb-4 text-lg font-semibold text-foreground">Select Book Copy</h2>
+                <p class="-mt-2 mb-4 text-sm text-muted-foreground">Search for an available book copy by title, barcode, or ISBN</p>
+                <div class="space-y-4">
                         <div>
                             <Label for="book_copy">
                                 Book Copy <span class="text-destructive">*</span>
@@ -435,17 +419,11 @@ onUnmounted(() => {
                             </div>
                         </div>
                     </div>
-                </CardContent>
 
                 <!-- Loan Details with Calendar -->
-                <CardHeader>
-                    <CardTitle>Loan Details</CardTitle>
-                    <CardDescription>
-                        Set the borrowed and due dates
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <div class="grid gap-6 md:grid-cols-2">
+                <h2 class="mb-4 text-lg font-semibold text-foreground">Loan Details</h2>
+                <p class="-mt-2 mb-4 text-sm text-muted-foreground">Set the borrowed and due dates</p>
+                <div class="grid gap-6 md:grid-cols-2">
                         <!-- Borrowed Date with Calendar -->
                         <div>
                             <Label for="borrowed_date">
@@ -514,7 +492,6 @@ onUnmounted(() => {
                             </p>
                         </div>
                     </div>
-                </CardContent>
 
                 <!-- Form Actions -->
                 <div class="flex justify-end gap-3 bg-background p-6">

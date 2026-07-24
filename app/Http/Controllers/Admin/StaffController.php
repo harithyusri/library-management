@@ -98,8 +98,9 @@ class StaffController extends Controller
         // Only staff roles
         $roles = Role::where('type', 'staff')->get();
 
-        // Get all departments for dropdown
-        $departments = \App\Models\Department::orderBy('name')->get();
+        // Get all departments for dropdown (without library scope for Super Admin)
+        $departments = \App\Models\Department::withoutGlobalScope(\App\Models\Scopes\LibraryScope::class)
+            ->orderBy('name')->get(['id', 'name', 'library_id']);
         $libraries = \App\Models\Library::orderBy('name')->get();
 
         return Inertia::render('admins/Staffs/Create', [
@@ -231,7 +232,8 @@ class StaffController extends Controller
 
         $user->load(['roles', 'staff.department', 'staff.library']);
         $roles = \Spatie\Permission\Models\Role::where('type', 'staff')->get();
-        $departments = \App\Models\Department::orderBy('name')->get();
+        $departments = \App\Models\Department::withoutGlobalScope(\App\Models\Scopes\LibraryScope::class)
+            ->orderBy('name')->get(['id', 'name', 'library_id']);
         $libraries = \App\Models\Library::orderBy('name')->get();
 
         return Inertia::render('admins/Staffs/Edit', [

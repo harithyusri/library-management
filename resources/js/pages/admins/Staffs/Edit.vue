@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { route } from 'ziggy-js'
-import { reactive, ref } from 'vue'
+import { reactive, ref, computed } from 'vue'
 import { router, Head, Link, useForm, usePage } from '@inertiajs/vue3'
 import AppLayout from '@/layouts/AppLayout.vue'
 import FlashAlert from '@/components/FlashAlert.vue'
@@ -17,7 +17,7 @@ const props = defineProps<{
     staff: any;
     staffProfile: any;
     roles: Array<{ id: number, name: string }>;
-    departments: Array<{ id: number, name: string }>;
+    departments: Array<{ id: number, name: string, library_id?: number | null }>;
     libraries: Array<{ id: number, name: string }>;
 }>();
 
@@ -43,6 +43,11 @@ const form = reactive({
     position: props.staffProfile?.position || '',
     notes: props.staffProfile?.notes || '',
 })
+
+const filteredDepartments = computed(() => {
+    if (!form.library_id) return [];
+    return props.departments.filter(d => d.library_id === Number(form.library_id));
+});
 
 const isDepartmentDialogOpen = ref(false)
 const departmentForm = useForm({
@@ -82,7 +87,7 @@ const submit = () => {
     <Head title="Edit Staff Member" />
 
     <AppLayout :breadcrumbs="breadcrumbs">
-        <div class="px-6 pt-2 pb-8 max-w-5xl mx-auto space-y-6">
+        <div class="max-w-5xl mx-auto space-y-6">
 
             <FlashAlert />
 
@@ -191,7 +196,7 @@ const submit = () => {
                             <div class="space-y-4">
                                 <div class="space-y-2">
                                     <Label class="text-[10px] font-black uppercase tracking-widest text-slate-400">Assigned Library</Label>
-                                    <Select v-model="form.library_id">
+                                    <Select v-model="form.library_id" @update:model-value="form.department_id = 'none'">
                                         <SelectTrigger class="rounded-xl font-bold" :class="{ 'border-destructive': page.props.errors.library_id }">
                                             <SelectValue placeholder="Select Library"/>
                                         </SelectTrigger>
@@ -208,17 +213,18 @@ const submit = () => {
 
                                 <div class="space-y-2">
                                     <Label class="text-[10px] font-black uppercase tracking-widest text-slate-400">Department</Label>
-                                    <Select v-model="form.department_id">
+                                    <Select v-model="form.department_id" :disabled="!form.library_id">
                                         <SelectTrigger class="rounded-xl font-bold">
                                             <SelectValue placeholder="Select Department" />
                                         </SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value="none">No Department</SelectItem>
-                                            <SelectItem v-for="dept in departments" :key="dept.id" :value="dept.id.toString()">
+                                            <SelectItem v-for="dept in filteredDepartments" :key="dept.id" :value="dept.id.toString()">
                                                 {{ dept.name }}
                                             </SelectItem>
                                         </SelectContent>
                                     </Select>
+                                    <p v-if="!form.library_id" class="text-[10px] text-slate-400">Select a library first</p>
 
                                     <p class="mt-2 text-xs text-slate-500">
                                         Cannot find the department?

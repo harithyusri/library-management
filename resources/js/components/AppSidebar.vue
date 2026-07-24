@@ -196,38 +196,19 @@ const adminNavItems = computed<NavItem[]>(() => [
         title: 'Settings',
         icon: Settings,
         isActive: computed(() =>
-            currentUrl.value.startsWith('/admin/users') ||
-            currentUrl.value.startsWith('/admin/roles') ||
             currentUrl.value.startsWith('/admin/staffs') ||
+            currentUrl.value.startsWith('/admin/roles') ||
             currentUrl.value.startsWith('/admin/members') ||
+            currentUrl.value.startsWith('/admin/libraries') ||
             currentUrl.value.startsWith('/admin/departments') ||
             currentUrl.value.startsWith('/admin/audits')
         ),
-        // Group visibility depends on sub-items (handled in filter below)
         items: [
             {
                 title: 'Access Control',
                 href: '/admin/roles',
                 isActive: computed(() => currentUrl.value.startsWith('/admin/roles')),
                 hidden: !page.props.auth.can?.manage_roles,
-            },
-            {
-                title: 'All Users',
-                href: '/admin/users',
-                isActive: computed(() => currentUrl.value.startsWith('/admin/users')),
-                hidden: !page.props.auth.can?.manage_roles,
-            },
-            {
-                title: 'System Staff',
-                href: '/admin/staffs',
-                isActive: computed(() => currentUrl.value.startsWith('/admin/staffs')), // Fixed from /admins
-                hidden: !page.props.auth.can?.view_users,
-            },
-            {
-                title: 'Members',
-                href: '/admin/members',
-                isActive: computed(() => currentUrl.value.startsWith('/admin/members')),
-                hidden: !page.props.auth.can?.view_users,
             },
             {
                 title: 'Libraries',
@@ -240,6 +221,18 @@ const adminNavItems = computed<NavItem[]>(() => [
                 href: '/admin/departments',
                 isActive: computed(() => currentUrl.value.startsWith('/admin/departments')),
                 hidden: !page.props.auth.can?.manage_roles,
+            },
+            {
+                title: 'Staff',
+                href: '/admin/staffs',
+                isActive: computed(() => currentUrl.value.startsWith('/admin/staffs')),
+                hidden: !page.props.auth.can?.view_users,
+            },
+            {
+                title: 'Members',
+                href: '/admin/members',
+                isActive: computed(() => currentUrl.value.startsWith('/admin/members')),
+                hidden: !page.props.auth.can?.view_users,
             },
             {
                 title: 'Audit Logs',

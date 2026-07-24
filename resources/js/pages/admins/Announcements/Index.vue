@@ -44,19 +44,19 @@ const formatDate = (dateString: string) => {
     <Head title="Announcements" />
 
     <AppLayout :breadcrumbs="breadcrumbs">
-        <div class="flex flex-1 flex-col gap-6 overflow-x-auto px-6 pt-2 pb-8">
+        <div class="flex flex-1 flex-col gap-6 overflow-x-auto">
 
             <FlashAlert />
             <!-- Header Section -->
             <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-2 border-b border-slate-100">
                 <div class="space-y-1">
-                    <h1 class="text-3xl font-black tracking-tight text-slate-900">Announcements <span class="text-indigo-600 text-6xl leading-none">.</span></h1>
-                    <p class="text-slate-500 font-medium">Broadcast updates, events, and important news to library members.</p>
+                    <h1 class="text-3xl font-black tracking-tight text-yellow-950">Announcements <span class="text-primary text-6xl leading-none">.</span></h1>
+                    <p class="text-yellow-800 font-medium">Broadcast updates, events, and important news to library members.</p>
                 </div>
 
                 <div class="flex items-center gap-3">
                     <Link v-if="$page.props.auth.can?.create_announcements" :href="route('admin.announcements.create')" class="contents">
-                        <Button class="bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg px-4 py-2 text-sm font-bold shadow-lg shadow-indigo-100 dark:shadow-none flex items-center gap-2">
+                        <Button class="bg-primary hover:opacity-90 text-primary-foreground rounded-lg px-4 py-2 text-sm font-bold flex items-center gap-2">
                             <Megaphone class="h-4 w-4" />
                             Create New Announcement
                         </Button>

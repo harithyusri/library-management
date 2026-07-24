@@ -14,12 +14,12 @@ use Illuminate\Support\Facades\Route;
 
 Route::post('/login', [AuthController::class, 'login']);
 
-Route::middleware('auth:sanctum')->group(function () {
+Route::get('book-copies/search', [BookCopyApiController::class, 'search'])->name('book-copies.search')->middleware('auth');
+Route::get('users/search', [UserApiController::class, 'search'])->name('users.search')->middleware('auth');
+
+Route::middleware(['auth'])->group(function () {
     Route::get('/user', [AuthController::class, 'user']);
     Route::post('/logout', [AuthController::class, 'logout']);
-
-    Route::get('book-copies/search', [BookCopyApiController::class, 'search'])->name('book-copies.search');
-    Route::get('users/search', [UserApiController::class, 'search'])->name('users.search');
 
     Route::prefix('member')->middleware('member')->group(function () {
         Route::get('/dashboard', [DashboardApiController::class, 'index']);

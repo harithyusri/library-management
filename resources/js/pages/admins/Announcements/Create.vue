@@ -55,7 +55,7 @@ const editorOptions = {
     <Head title="Create Announcement" />
 
     <AppLayout :breadcrumbs="breadcrumbs">
-        <div class="flex flex-1 flex-col gap-6 p-4 max-w-4xl mx-auto w-full">
+        <div class="flex flex-1 flex-col gap-6 max-w-4xl mx-auto w-full">
             <div class="flex items-center justify-between">
                 <h1 class="text-2xl font-semibold text-foreground">
                     Create Announcement

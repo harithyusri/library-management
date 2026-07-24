@@ -139,6 +139,34 @@ class LoanController extends Controller
     }
 
     /**
+     * Search for available book copies (AJAX).
+     */
+    public function searchBookCopies(Request $request)
+    {
+        $query = $request->get('q', '');
+
+        if (strlen($query) < 2) {
+            return response()->json(['data' => []]);
+        }
+
+        $copies = BookCopy::with('book:id,title,author_name,isbn')
+            ->where('status', 'available')
+            ->where(function ($q) use ($query) {
+                $q->where('barcode', 'like', "%{$query}%")
+                  ->orWhere('call_number', 'like', "%{$query}%")
+                  ->orWhereHas('book', function ($bookQuery) use ($query) {
+                      $bookQuery->where('title', 'like', "%{$query}%")
+                                ->orWhere('author_name', 'like', "%{$query}%")
+                                ->orWhere('isbn', 'like', "%{$query}%");
+                  });
+            })
+            ->limit(20)
+            ->get();
+
+        return response()->json(['data' => $copies]);
+    }
+
+    /**
      * Return a borrowed book.
      */
     public function return(Request $request, Loan $loan)

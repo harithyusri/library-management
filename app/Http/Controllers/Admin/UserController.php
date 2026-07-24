@@ -13,6 +13,24 @@ use Spatie\Permission\Models\Role;
 class UserController extends Controller
 {
     /**
+     * JSON search for users (used by room booking form).
+     */
+    public function search(Request $request)
+    {
+        $users = User::where(function ($q) use ($request) {
+                $search = $request->q ?? $request->search ?? '';
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%");
+            })
+            ->whereNull('deleted_at')
+            ->select('id', 'name', 'email')
+            ->limit(10)
+            ->get();
+
+        return response()->json(['data' => $users]);
+    }
+
+    /**
      * Display a paginated list of all users (all roles).
      */
     public function index(Request $request): Response
