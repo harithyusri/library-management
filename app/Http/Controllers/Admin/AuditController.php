@@ -24,17 +24,17 @@ class AuditController extends Controller
             ->orderBy('created_at', 'desc');
 
         // Filter by user
-        if ($request->has('user_id')) {
+        if ($request->filled('user_id')) {
             $query->where('user_id', $request->user_id);
         }
 
         // Filter by event
-        if ($request->has('event')) {
+        if ($request->filled('event')) {
             $query->where('event', $request->event);
         }
 
         // Filter by auditable type
-        if ($request->has('auditable_type')) {
+        if ($request->filled('auditable_type')) {
             $query->where('auditable_type', 'like', '%' . $request->auditable_type . '%');
         }
 

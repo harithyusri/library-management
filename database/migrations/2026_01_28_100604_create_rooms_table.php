@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('rooms', function (Blueprint $table) {
             $table->id();
-
+            $table->foreignId('library_id')->nullable()->constrained()->nullOnDelete();
             $table->string('name');
             $table->string('room_number')->nullable();
             $table->string('type');
@@ -18,20 +18,13 @@ return new class extends Migration
             $table->text('description')->nullable();
             $table->json('amenities')->nullable();
             $table->unsignedInteger('floor')->nullable();
-
-            $table->enum('status', [
-                'available',
-                'maintenance',
-                'unavailable',
-            ])->default('available');
-
+            $table->enum('status', ['available', 'maintenance', 'unavailable'])->default('available');
             $table->decimal('hourly_rate', 8, 2)->default(0);
-
             $table->string('image')->nullable();
-
             $table->timestamps();
             $table->softDeletes();
 
+            $table->index('library_id');
             $table->index('status');
             $table->index('type');
             $table->index('capacity');

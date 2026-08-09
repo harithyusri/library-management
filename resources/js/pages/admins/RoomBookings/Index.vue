@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { route } from 'ziggy-js';
-import { ref, computed } from 'vue';
+import PageHeader from '@/components/PageHeader.vue';
+import { ref, computed, watch } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import { type BreadcrumbItem } from '@/types';
 import AppLayout from '@/layouts/AppLayout.vue';
@@ -30,11 +31,23 @@ interface Booking {
 const props = defineProps<{
     bookings: Booking[];
     can: { createBookings: boolean; editBookings: boolean; deleteBookings: boolean };
+    libraries: Array<{ id: number; name: string }>;
+    selected_library_id: number | null;
+    is_super_admin: boolean;
 }>();
 
 const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Room Bookings', href: '#' },
 ];
+
+// ── Library filter (super admin) ───────────────────────────────
+const selectedLibrary = ref(props.selected_library_id ? String(props.selected_library_id) : 'all');
+
+watch(selectedLibrary, (val) => {
+    router.get(route('admin.room-bookings.index'), { library_id: val !== 'all' ? val : null }, {
+        preserveState: true, preserveScroll: true, replace: true,
+    });
+});
 
 // ── Calendar state ──────────────────────────────────────────────
 const today = new Date();
@@ -143,14 +156,18 @@ const allSorted = computed(() =>
         <div class="space-y-6">
             <FlashAlert />
 
-            <!-- Header Section -->
-            <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-2 border-b border-slate-100">
-                <div class="space-y-1">
-                    <h1 class="text-3xl font-black tracking-tight text-yellow-950">Room Bookings <span class="text-primary text-6xl leading-none">.</span></h1>
-                    <p class="text-yellow-800 font-medium">Manage and view all room reservations and utilization.</p>
-                </div>
+            <PageHeader title="Room Bookings " description="Manage and view all room reservations and utilization.">
+                    <!-- Library filter (super admin) -->
+                    <template v-if="is_super_admin && libraries?.length">
+                        <select
+                            v-model="selectedLibrary"
+                            class="h-9 rounded-md border border-input bg-background px-3 text-sm focus:border-ring focus:ring-ring"
+                        >
+                            <option value="all">All Libraries</option>
+                            <option v-for="lib in libraries" :key="lib.id" :value="String(lib.id)">{{ lib.name }}</option>
+                        </select>
+                    </template>
 
-                <div class="flex items-center gap-3">
                     <!-- View toggle -->
                     <Tabs :model-value="view" @update:model-value="val => { view = val as 'calendar' | 'list'; }" class="mr-2">
                         <TabsList>
@@ -165,8 +182,7 @@ const allSorted = computed(() =>
                             New Booking
                         </Button>
                     </Link>
-                </div>
-            </div>
+            </PageHeader>
 
             <!-- ── CALENDAR VIEW ── -->
             <div v-if="view === 'calendar'" class="grid gap-6 lg:grid-cols-5">

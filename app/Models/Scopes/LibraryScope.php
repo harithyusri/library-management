@@ -5,6 +5,7 @@ namespace App\Models\Scopes;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Scope;
+use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 
 class LibraryScope implements Scope
@@ -15,6 +16,7 @@ class LibraryScope implements Scope
     public function apply(Builder $builder, Model $model): void
     {
         if (Auth::check()) {
+            /** @var User $user */
             $user = Auth::user();
 
             // Super Admin can see everything
@@ -24,17 +26,27 @@ class LibraryScope implements Scope
 
             // If the user is staff, only show items from their library
             if ($user->isStaff()) {
-                // Load the staff relationship if not already loaded
-                if (!$user->relationLoaded('staff')) {
-                    $user->load('staff');
-                }
+                $user->loadMissing('staff');
                 
                 $staff = $user->staff;
                 if ($staff && $staff->library_id) {
                     $table = $model->getTable();
 
-                    // Announcements can be global (library_id is null)
-                    if ($model instanceof \App\Models\Announcement) {
+                    // null library_id = shared/global record visible to all libraries
+                    // (Announcements, Categories, Genres, Publishers)
+                    $sharedModels = [
+                        \App\Models\Announcement::class,
+                        \App\Models\Category::class,
+                        \App\Models\Genre::class,
+                        \App\Models\Publisher::class,
+                    ];
+
+                    // Books: staff can see all books (copies may exist at any library)
+                    if ($model instanceof \App\Models\Book) {
+                        return;
+                    }
+
+                    if (in_array(get_class($model), $sharedModels)) {
                         $builder->where(function ($query) use ($staff, $table) {
                             $query->where("{$table}.library_id", $staff->library_id)
                                   ->orWhereNull("{$table}.library_id");

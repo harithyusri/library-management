@@ -3,29 +3,44 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\StoreBookRequest;
+use App\Http\Requests\Admin\UpdateBookRequest;
 use App\Models\Book;
 use App\Models\BookCopy;
 use App\Models\Category;
 use App\Models\Genre;
+use App\Models\Library;
 use App\Models\Publisher;
-use chillerlan\QRCode\Output\QROutputInterface;
-use chillerlan\QRCode\QRCode;
-use chillerlan\QRCode\QROptions;
+use App\Models\Scopes\LibraryScope;
+use App\Services\LoanService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 
 class BookController extends Controller
 {
+    public function __construct(private LoanService $loanService) {}
     /**
      * Display a listing of the books.
      */
     public function index(Request $request)
     {
+        $user = $request->user();
+        $isSuperAdmin = $user->hasRole('Super Admin');
+        $libraries = [];
+        $selectedLibraryId = null;
+
+        if ($isSuperAdmin) {
+            $libraries = Library::where('is_active', true)->orderBy('name')->get(['id', 'name']);
+            $selectedLibraryId = $request->integer('library_id') ?: null;
+        }
+
         $query = Book::query()
-            ->with(['genres', 'category', 'publisher', 'library']);
+            ->with(['genres', 'category', 'publisher', 'library'])
+            ->when($isSuperAdmin && $selectedLibraryId, fn ($q) =>
+                $q->withoutGlobalScope(LibraryScope::class)->where('library_id', $selectedLibraryId)
+            );
 
         // Search
         if ($request->filled('search')) {
@@ -71,20 +86,15 @@ class BookController extends Controller
         $books = $query->paginate(12)->withQueryString();
 
         return Inertia::render('admins/Books/Index', [
-            'books' => $books,
-            'filters' => $request->only([
-                'search',
-                'genre',
-                'category',
-                'format',
-                'language',
-                'sort_by',
-                'sort_order',
-            ]),
-            'genres' => Genre::orderBy('name')->get(['id', 'name']),
-            'categories' => Category::orderBy('name')->get(['id', 'name']),
-            'formatOptions' => Book::getFormatOptions(),
-            'languageOptions' => Book::getLanguageOptions(),
+            'books'               => $books,
+            'filters'             => $request->only(['search', 'genre', 'category', 'format', 'language', 'sort_by', 'sort_order']),
+            'genres'              => Genre::orderBy('name')->get(['id', 'name']),
+            'categories'          => Category::orderBy('name')->get(['id', 'name']),
+            'formatOptions'       => Book::getFormatOptions(),
+            'languageOptions'     => Book::getLanguageOptions(),
+            'libraries'           => $libraries,
+            'selected_library_id' => $selectedLibraryId,
+            'is_super_admin'      => $isSuperAdmin,
         ]);
     }
 
@@ -103,86 +113,18 @@ class BookController extends Controller
         ]);
     }
 
-    /**
-     * Store a newly created book in storage.
-     */
-    public function store(Request $request)
+    public function store(StoreBookRequest $request)
     {
-        $validated = $request->validate(
-            [
-                'title' => 'required|string|max:255',
-                'author_name' => 'required|string|max:255',
-                'isbn' => 'required|string|max:20|unique:books,isbn',
-
-                'genre_ids' => ['required', 'array', 'min:1'],
-                'genre_ids.*' => ['exists:genres,id'],
-
-                'category_id' => 'required|exists:categories,id',
-                'publisher_id' => 'required|exists:publishers,id',
-                'library_id' => 'nullable|exists:libraries,id',
-
-                'published_year' => 'nullable|integer|min:1000|max:'.date('Y'),
-                'format' => 'required|in:hardcover,paperback,ebook,audiobook',
-                'pages' => 'required|integer|min:1',
-                'language' => 'required|string|max:50',
-                'description' => 'required|string',
-
-                'cover_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:10240',
-            ],
-            [
-                // Basic info
-                'title.required' => 'Please enter the book title.',
-                'author_name.required' => 'Please enter the author name.',
-                'isbn.required' => 'Please enter the ISBN.',
-                'isbn.unique' => 'This ISBN already exists in the library.',
-
-                // Genres
-                'genre_ids.required' => 'Please select at least one genre.',
-                'genre_ids.array' => 'Invalid genre selection.',
-                'genre_ids.min' => 'Please select at least one genre.',
-                'genre_ids.*.exists' => 'One or more selected genres are invalid.',
-
-                // Category & publisher
-                'category_id.required' => 'Please select a category.',
-                'category_id.exists' => 'The selected category is invalid.',
-
-                'publisher_id.required' => 'Please select a publisher.',
-                'publisher_id.exists' => 'The selected publisher is invalid.',
-
-                // Publication
-                'published_year.integer' => 'Publication year must be a valid number.',
-                'published_year.min' => 'Publication year is too early.',
-                'published_year.max' => 'Publication year cannot be in the future.',
-
-                // Book details
-                'format.required' => 'Please select a book format.',
-                'format.in' => 'Selected book format is invalid.',
-
-                'pages.required' => 'Please enter the number of pages.',
-                'pages.integer' => 'Number of pages must be a number.',
-                'pages.min' => 'Number of pages must be at least 1.',
-
-                'language.required' => 'Please select a language.',
-                'description.required' => 'Please enter a book description.',
-
-                // Cover image
-                'cover_image.image' => 'The cover image must be an image file.',
-                'cover_image.mimes' => 'Cover image must be JPG, PNG, GIF, or WEBP.',
-                'cover_image.max' => 'Cover image size must not exceed 10MB.',
-            ]
-        );
-
-        $genreIds = $validated['genre_ids'];
+        $validated = $request->validated();
+        $genreIds  = $validated['genre_ids'];
         unset($validated['genre_ids']);
 
-        // Handle cover image upload
         if ($request->hasFile('cover_image')) {
             $path = $request->file('cover_image')->store('book-covers', 'public');
-            $validated['cover_image'] = '/storage/'.$path;
+            $validated['cover_image'] = '/storage/' . $path;
         }
 
         $book = Book::create($validated);
-
         $book->genres()->sync($genreIds);
 
         return redirect()->route('admin.books.show')->with('success', 'Book created successfully!');
@@ -228,93 +170,23 @@ class BookController extends Controller
         ]);
     }
 
-    /**
-     * Update the specified book in storage.
-     */
-    public function update(Request $request, Book $book)
+    public function update(UpdateBookRequest $request, Book $book)
     {
-        $validated = $request->validate(
-            [
-                'title' => 'required|string|max:255',
-                'author_name' => 'required|string|max:255',
-                'isbn' => 'required|string|max:20|unique:books,isbn,'.$book->id,
-
-                'genre_ids' => ['required', 'array', 'min:1'],
-                'genre_ids.*' => ['exists:genres,id'],
-
-                'category_id' => 'required|exists:categories,id',
-                'publisher_id' => 'required|exists:publishers,id',
-                'library_id' => 'nullable|exists:libraries,id',
-
-                'published_year' => 'nullable|integer|min:1000|max:'.date('Y'),
-                'format' => 'required|in:hardcover,paperback,ebook,audiobook',
-                'pages' => 'required|integer|min:1',
-                'language' => 'required|string|max:50',
-                'description' => 'nullable|string',
-
-                'cover_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:10240',
-            ],
-            [
-                // Basic info
-                'title.required' => 'Please enter the book title.',
-                'author_name.required' => 'Please enter the author name.',
-                'isbn.required' => 'Please enter the ISBN.',
-                'isbn.unique' => 'This ISBN already exists in the library.',
-
-                // Genres
-                'genre_ids.required' => 'Please select at least one genre.',
-                'genre_ids.array' => 'Invalid genre selection.',
-                'genre_ids.min' => 'Please select at least one genre.',
-                'genre_ids.*.exists' => 'One or more selected genres are invalid.',
-
-                // Category & publisher
-                'category_id.required' => 'Please select a category.',
-                'category_id.exists' => 'The selected category is invalid.',
-
-                'publisher_id.required' => 'Please select a publisher.',
-                'publisher_id.exists' => 'The selected publisher is invalid.',
-
-                // Publication
-                'publication_year.integer' => 'Publication year must be a valid number.',
-                'publication_year.min' => 'Publication year is too early.',
-                'publication_year.max' => 'Publication year cannot be in the future.',
-
-                // Book details
-                'format.required' => 'Please select a book format.',
-                'format.in' => 'Selected book format is invalid.',
-
-                'pages.required' => 'Please enter the number of pages.',
-                'pages.integer' => 'Number of pages must be a number.',
-                'pages.min' => 'Number of pages must be at least 1.',
-
-                'language.required' => 'Please select a language.',
-                'description.required' => 'Please enter a book description.',
-
-                // Cover image
-                'cover_image.image' => 'The cover image must be an image file.',
-                'cover_image.mimes' => 'Cover image must be JPG, PNG, GIF, or WEBP.',
-                'cover_image.max' => 'Cover image size must not exceed 10MB.',
-            ]
-        );
-
-        $genreIds = $validated['genre_ids'];
+        $validated = $request->validated();
+        $genreIds  = $validated['genre_ids'];
         unset($validated['genre_ids']);
 
-        // Handle cover image upload
         if ($request->hasFile('cover_image')) {
-            // Delete old image if exists
             if ($book->cover_image && ! filter_var($book->cover_image, FILTER_VALIDATE_URL)) {
-                $oldPath = str_replace('/storage/', '', $book->cover_image);
-                Storage::disk('public')->delete($oldPath);
+                Storage::disk('public')->delete(str_replace('/storage/', '', $book->cover_image));
             }
             $path = $request->file('cover_image')->store('book-covers', 'public');
-            $validated['cover_image'] = '/storage/'.$path;
+            $validated['cover_image'] = '/storage/' . $path;
         } else {
             unset($validated['cover_image']);
         }
 
         $book->update($validated);
-
         $book->genres()->sync($genreIds);
 
         return redirect()->route('admin.books.show')->with('success', 'Book updated successfully.');
@@ -401,31 +273,24 @@ class BookController extends Controller
     //     ]);
     // }
 
-    /**
-     * Store a new book copy.
-     */
     public function storeCopy(Request $request, Book $book)
     {
         $validated = $request->validate([
             'library_id' => 'required|exists:libraries,id',
-            'condition' => 'required|in:excellent,good,fair,poor,damaged',
-            'location' => 'nullable|string|max:255',
+            'condition'  => 'required|in:excellent,good,fair,poor,damaged',
+            'location'   => 'nullable|string|max:255',
         ]);
 
-        $book->load('category');
-
-        $callNumber = $this->generateCallNumber($book);
-
-        $copy = $book->copies()->create([
-            'barcode' => (string) Str::uuid(),
-            'condition' => $validated['condition'] ?? 'good',
-            'status' => 'available',
-            'call_number' => $callNumber,
-            'location' => $validated['location'] ?? null,
-            'library_id' => $validated['library_id'],
+        $book->copies()->create([
+            'barcode'     => (string) Str::uuid(),
+            'condition'   => $validated['condition'],
+            'status'      => 'available',
+            'call_number' => $this->loanService->generateCallNumber($book),
+            'location'    => $validated['location'] ?? null,
+            'library_id'  => $validated['library_id'],
         ]);
 
-        return redirect()->back()->with('success', 'Book copy added successfully!');
+        return back()->with('success', 'Book copy added successfully!');
     }
 
     /**
@@ -449,14 +314,39 @@ class BookController extends Controller
         return redirect()->back()->with('success', 'Book copy updated successfully!');
     }
 
-    /**
-     * Generate QR code for a book copy.
-     */
     public function generateCopyQRCode(Book $book, BookCopy $copy)
     {
-        $this->generateQRCode($book, $copy);
+        $this->loanService->generateQrCode($book, $copy);
+        return back()->with('success', 'QR code generated successfully!');
+    }
 
-        return redirect()->back()->with('success', 'QR code generated successfully!');
+    /**
+     * Scan a barcode and return the book copy details as JSON.
+     */
+    public function scanBarcode(Request $request, string $barcode)
+    {
+        $copy = BookCopy::with('book:id,title,author_name,isbn')
+            ->where('barcode', $barcode)
+            ->first();
+
+        if (! $copy) {
+            return response()->json(['error' => 'Book copy not found for this barcode.'], 404);
+        }
+
+        return response()->json([
+            'id'          => $copy->id,
+            'barcode'     => $copy->barcode,
+            'call_number' => $copy->call_number,
+            'status'      => $copy->status,
+            'condition'   => $copy->condition,
+            'location'    => $copy->location,
+            'book'        => [
+                'id'          => $copy->book->id,
+                'title'       => $copy->book->title,
+                'author_name' => $copy->book->author_name,
+                'isbn'        => $copy->book->isbn,
+            ],
+        ]);
     }
 
     /**
@@ -483,67 +373,5 @@ class BookController extends Controller
     /**
      * Helper method to generate QR code.
      */
-    private function generateQRCode(Book $book, BookCopy $copy)
-    {
-        // 1. Prepare Data
-        $qrData = json_encode([
-            'barcode' => $copy->barcode,
-            'book_id' => $book->id,
-            'copy_id' => $copy->id,
-            'title' => $book->title,
-            'author' => $book->author_name,
-            'isbn' => $book->isbn,
-            'call_number' => $copy->call_number,
-        ]);
-
-        // 2. Configure Options
-        $options = new QROptions([
-            'version' => QRCode::VERSION_AUTO,
-            'outputType' => QROutputInterface::GDIMAGE_PNG, // Correct for v5
-            'eccLevel' => QRCode::ECC_H,
-            'scale' => 10,
-            'imageBase64' => false, // Returns raw binary
-            'bgColor' => [255, 255, 255],
-            'imageTransparent' => false,
-        ]);
-
-        // 3. Generate
-        $qrcode = new QRCode($options);
-        $qrCodeBinary = $qrcode->render($qrData);
-
-        // 4. Save to Storage
-        $filename = "qr-codes/{$copy->barcode}.png";
-
-        // Create directory if missing
-        if (! Storage::disk('public')->exists('qr-codes')) {
-            Storage::disk('public')->makeDirectory('qr-codes');
-        }
-
-        Storage::disk('public')->put($filename, $qrCodeBinary);
-
-        // 5. Update DB
-        $copy->update([
-            'qr_code_url' => Storage::url($filename),
-        ]);
-    }
-
-    private function generateCallNumber(Book $book): string
-    {
-        $categoryName = $book->category->name ?? 'General';
-        $categoryCode = strtoupper(substr($categoryName, 0, 3));
-
-        // Get author code (first 3 letters of last name)
-        if (empty($book->author_name)) {
-            $authorCode = 'UNK';
-        } else {
-            $nameParts = explode(' ', trim($book->author_name));
-            $lastName = end($nameParts);
-            $authorCode = strtoupper(substr($lastName, 0, 3));
-        }
-        // Copy number for this specific book
-        $copyCount = $book->copies()->count() + 1;
-        $copyNumber = str_pad($copyCount, 3, '0', STR_PAD_LEFT);
-
-        return "{$categoryCode}-{$authorCode}-{$copyNumber}";
-    }
+    private function generateCallNumber(Book $book): string { return ''; } // kept for BC — use LoanService::generateCallNumber
 }

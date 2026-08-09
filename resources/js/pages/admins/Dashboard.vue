@@ -1,18 +1,20 @@
 <script setup lang="ts">
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, Link, router } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
-    BookOpen, Users, Calendar, DoorOpen, Clock,
-    ArrowRight, TrendingUp, TrendingDown, Plus,
-    BookMarked, AlertTriangle,
-    BarChart3, Activity, Percent, Eye,
+    BookOpen, Users, DoorOpen, Clock,
+    ArrowRight, Plus, AlertTriangle,
+    BarChart3, Activity, Eye,
 } from 'lucide-vue-next';
 import { route } from 'ziggy-js';
+import StatCard from '@/components/dashboard/StatCard.vue';
+import DonutBreakdown from '@/components/dashboard/DonutBreakdown.vue';
 
 // ── Props ────────────────────────────────────────────────────────
 const props = defineProps<{
@@ -39,7 +41,21 @@ const props = defineProps<{
         image_path: string | null;
         created_at: string;
     }>;
+    libraries?: Array<{ id: number; name: string }>;
+    selected_library_id?: number | null;
+    is_super_admin?: boolean;
 }>();
+
+const selectedLibrary = ref<number | null>(props.selected_library_id ?? null);
+
+const switchLibrary = (id: string) => {
+    const numId = id === 'all' ? null : Number(id);
+    selectedLibrary.value = numId;
+    router.get(route('admin.dashboard'), numId ? { library_id: numId } : {}, {
+        preserveState: false,
+        preserveScroll: true,
+    });
+};
 
 const breadcrumbs: BreadcrumbItem[] = [{ title: 'Dashboard', href: route('admin.dashboard') }];
 
@@ -52,19 +68,6 @@ const getStatusVariant = (status: string): 'default' | 'destructive' | 'secondar
     return 'outline';
 };
 
-const loanUtilization = computed(() => {
-    const totalMembers = props.stats.total_members as number | undefined;
-    const activeLoans = props.stats.active_loans as number | undefined;
-    if (!totalMembers) return 0;
-    return Math.min(100, Math.round(((activeLoans ?? 0) / totalMembers) * 100));
-});
-const roomUtilizationPct = computed(() => {
-    const totalRooms = props.stats.total_rooms as number | undefined;
-    const availableRooms = props.stats.available_rooms as number | undefined;
-    if (!totalRooms) return 0;
-    return Math.round((((totalRooms) - (availableRooms ?? 0)) / totalRooms) * 100);
-});
-
 const now = new Date();
 const greeting = computed(() => {
     const h = now.getHours();
@@ -75,6 +78,15 @@ const greeting = computed(() => {
 const todayFormatted = now.toLocaleDateString('en-MY', {
     weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
 });
+
+// ── Library filter (national admin view) ──────────────────────
+const selectedLibraryId = ref<string>('all');
+const onLibraryChange = (id: string) => {
+    router.get(route('admin.dashboard'), { library_id: id === 'all' ? undefined : id }, {
+        preserveState: true,
+        preserveScroll: true,
+    });
+};
 
 // ── Bar Chart ────────────────────────────────────────────────────
 const chartTab = ref<'loans' | 'bookings'>('loans');
@@ -144,16 +156,6 @@ const activeTicks = computed(() =>
         : yTicks([...props.booking_trends.map(d => d.bookings), ...props.booking_trends.map(d => d.confirmed)])
 );
 
-const loanTrend = computed(() => {
-    const t = props.loan_trends;
-    return t.length < 2 ? 0 : t[t.length - 1].loans - t[t.length - 2].loans;
-});
-const bookingTrend = computed(() => {
-    const t = props.booking_trends;
-    return t.length < 2 ? 0 : t[t.length - 1].bookings - t[t.length - 2].bookings;
-});
-const activeTrend = computed(() => chartTab.value === 'loans' ? loanTrend.value : bookingTrend.value);
-
 // ── Tooltip ──────────────────────────────────────────────────────
 interface TooltipState {
     visible: boolean;
@@ -211,44 +213,12 @@ function sparkline(values: number[], w = 72, h = 24): string {
 }
 const loanSpark = computed(() => sparkline(props.loan_trends.map(d => d.loans)));
 const bookingSpark = computed(() => sparkline(props.booking_trends.map(d => d.bookings)));
-const LOAN_COLOR = '#795553';
-const BOOKING_COLOR = '#4a2c2a';
-
-// ── Donut Chart ──────────────────────────────────────────────────
-function makeDonut(values: number[], colors: string[]) {
-    const total = values.reduce((a, b) => a + b, 0) || 1;
-    const r = 38;
-    const circ = 2 * Math.PI * r;
-    let offset = 0;
-    return values.map((v, i) => {
-        const dash = (v / total) * circ;
-        const seg = { dash, offset, color: colors[i], pct: Math.round((v / total) * 100), value: v };
-        offset += dash;
-        return seg;
-    });
-}
-const loanDonut = computed(() => makeDonut(
-    [props.loan_status_breakdown?.active ?? 0, props.loan_status_breakdown?.overdue ?? 0, props.loan_status_breakdown?.returned ?? 0],
-    ['#795553', '#ba1a1a', '#cba72f'],
-));
-const loanTotal = computed(() =>
-    (props.loan_status_breakdown?.active ?? 0) + (props.loan_status_breakdown?.overdue ?? 0) + (props.loan_status_breakdown?.returned ?? 0)
-);
-const bookingDonut = computed(() => makeDonut(
-    [props.booking_status_breakdown?.confirmed ?? 0, props.booking_status_breakdown?.pending ?? 0,
-     props.booking_status_breakdown?.cancelled ?? 0, props.booking_status_breakdown?.completed ?? 0],
-    ['#cba72f', '#735c00', '#ba1a1a', '#827472'],
-));
-const bookingTotal = computed(() =>
-    (props.booking_status_breakdown?.confirmed ?? 0) + (props.booking_status_breakdown?.pending ?? 0) +
-    (props.booking_status_breakdown?.cancelled ?? 0) + (props.booking_status_breakdown?.completed ?? 0)
-);
 
 const maxBookCount = computed(() => Math.max(...props.top_books.map(b => b.count), 1));
 const stripHtml = (html: string) => {
-    const tmp = document.createElement("DIV");
+    const tmp = document.createElement('DIV');
     tmp.innerHTML = html;
-    return tmp.textContent || tmp.innerText || "";
+    return tmp.textContent || tmp.innerText || '';
 };
 
 const activityTab = ref<'loans' | 'bookings'>('loans');
@@ -263,9 +233,20 @@ const activeActivities = computed(() => activityTab.value === 'loans' ? recentLo
         <div class="space-y-6">
             <!-- ── Header ──────────────────────────────────────── -->
             <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-2 border-b border-border">
-                <div class="space-y-1">
-                    <p class="text-3xl font-black tracking-tight text-foreground">{{ greeting }}, {{ user.name }} <span class="text-primary text-6xl leading-none">.</span></p>
-                    <p class="text-muted-foreground font-medium">{{ todayFormatted }}</p>
+                <div class="space-y-2">
+                    <p class="text-xs uppercase tracking-[0.2em] text-muted-foreground font-medium">{{ todayFormatted }}</p>
+                    <h1 class="font-serif text-4xl lg:text-5xl leading-[1.05] tracking-tight text-foreground">
+                        {{ greeting }}, <span class="italic text-primary">{{ user.name }}</span><span class="text-[#cba72f] text-6xl leading-none">.</span>
+                    </h1>
+                    <Select v-if="is_super_admin && libraries?.length" :model-value="selectedLibrary ? String(selectedLibrary) : 'all'" @update:model-value="switchLibrary">
+                        <SelectTrigger class="w-56 h-10 rounded-lg">
+                            <SelectValue placeholder="All Libraries (National)" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">All Libraries (National)</SelectItem>
+                            <SelectItem v-for="lib in libraries" :key="lib.id" :value="String(lib.id)">{{ lib.name }}</SelectItem>
+                        </SelectContent>
+                    </Select>
                 </div>
                 <div class="flex items-center gap-3">
                     <Link :href="route('admin.loans.create')">
@@ -285,69 +266,16 @@ const activeActivities = computed(() => activityTab.value === 'loans' ? recentLo
 
             <!-- ── Statistics Overview ───────────────────────────── -->
             <div class="grid gap-4 grid-cols-2 lg:grid-cols-4">
-                <Card class="relative overflow-hidden transition-shadow hover:shadow-md">
-                    <div class="absolute inset-0 bg-gradient-to-br from-[#ffdad7]/40 to-transparent opacity-60 pointer-events-none" />
-                    <CardContent class="pt-5 pb-4 px-5">
-                        <div class="flex items-start justify-between mb-2">
-                            <div class="rounded-lg bg-[#ffdad7]/60 p-2">
-                                <BookOpen class="h-4 w-4 text-primary" />
-                            </div>
-                            <svg width="72" height="24" class="opacity-40 mt-1">
-                                <polyline :points="loanSpark" fill="none" :stroke="LOAN_COLOR" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                            </svg>
-                        </div>
-                        <div class="text-2xl font-bold tabular-nums">{{ (stats.total_books as number ?? 0).toLocaleString() }}</div>
-                        <p class="text-xs text-muted-foreground mt-0.5">Total Books</p>
-                    </CardContent>
-                </Card>
-
-                <Card class="relative overflow-hidden transition-shadow hover:shadow-md">
-                    <div class="absolute inset-0 bg-gradient-to-br from-[#d2e4fb]/40 to-transparent opacity-60 pointer-events-none" />
-                    <CardContent class="pt-5 pb-4 px-5">
-                        <div class="flex items-start justify-between mb-2">
-                            <div class="rounded-lg bg-[#d2e4fb]/60 p-2">
-                                <Users class="h-4 w-4 text-[#4f6073]" />
-                            </div>
-                            <div v-if="stats.new_members_this_month" class="flex items-center gap-0.5 text-xs font-medium text-[#735c00] mt-1">
-                                <TrendingUp class="h-3 w-3" />+{{ stats.new_members_this_month }} this month
-                            </div>
-                        </div>
-                        <div class="text-2xl font-bold tabular-nums">{{ (stats.total_members as number ?? 0).toLocaleString() }}</div>
-                        <p class="text-xs text-muted-foreground mt-0.5">Registered Members</p>
-                    </CardContent>
-                </Card>
-
-                <Card class="relative overflow-hidden transition-shadow hover:shadow-md">
-                    <div class="absolute inset-0 bg-gradient-to-br from-[#ffe088]/40 to-transparent opacity-60 pointer-events-none" />
-                    <CardContent class="pt-5 pb-4 px-5">
-                        <div class="flex items-start justify-between mb-2">
-                            <div class="rounded-lg bg-[#ffe088]/60 p-2">
-                                <Clock class="h-4 w-4 text-[#735c00]" />
-                            </div>
-                            <span v-if="stats.overdue_loans" class="flex items-center gap-0.5 text-xs font-medium text-destructive mt-1">
-                                <AlertTriangle class="h-3 w-3" /> {{ stats.overdue_loans }} overdue
-                            </span>
-                        </div>
-                        <div class="text-2xl font-bold tabular-nums">{{ (stats.active_loans as number ?? 0).toLocaleString() }}</div>
-                        <p class="text-xs text-muted-foreground mt-0.5">Active Loans</p>
-                    </CardContent>
-                </Card>
-
-                <Card class="relative overflow-hidden transition-shadow hover:shadow-md">
-                    <div class="absolute inset-0 bg-gradient-to-br from-[#eabcb8]/30 to-transparent opacity-60 pointer-events-none" />
-                    <CardContent class="pt-5 pb-4 px-5">
-                        <div class="flex items-start justify-between mb-2">
-                            <div class="rounded-lg bg-[#eabcb8]/40 p-2">
-                                <DoorOpen class="h-4 w-4 text-primary" />
-                            </div>
-                            <svg width="72" height="24" class="opacity-40 mt-1">
-                                <polyline :points="bookingSpark" fill="none" :stroke="BOOKING_COLOR" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                            </svg>
-                        </div>
-                        <div class="text-2xl font-bold tabular-nums">{{ (stats.available_rooms as number ?? 0).toLocaleString() }}</div>
-                        <p class="text-xs text-muted-foreground mt-0.5">Available Rooms</p>
-                    </CardContent>
-                </Card>
+                <StatCard :icon="BookOpen" icon-bg="oklch(0.9 0.03 150)" :value="(stats.total_books as number ?? 0).toLocaleString()"
+                    label="Total Books" :sparkline-points="loanSpark" sparkline-color="#795553" />
+                <StatCard :icon="Users" icon-bg="oklch(0.86 0.04 145)" :value="(stats.total_members as number ?? 0).toLocaleString()"
+                    label="Registered Members"
+                    :trend-text="stats.new_members_this_month ? `+${stats.new_members_this_month} this month` : undefined" trend-variant="up" />
+                <StatCard :icon="Clock" icon-bg="oklch(0.92 0.04 78)" :value="(stats.active_loans as number ?? 0).toLocaleString()"
+                    label="Active Loans"
+                    :trend-text="stats.overdue_loans ? `${stats.overdue_loans} overdue` : undefined" trend-variant="warning" />
+                <StatCard :icon="DoorOpen" icon-bg="oklch(0.88 0.03 170)" :value="(stats.available_rooms as number ?? 0).toLocaleString()"
+                    label="Available Rooms" :sparkline-points="bookingSpark" sparkline-color="#4a2c2a" />
             </div>
 
             <!-- ── Charts & Breakdown ────────────────────────────── -->
@@ -356,10 +284,10 @@ const activeActivities = computed(() => activityTab.value === 'loans' ? recentLo
                     <CardHeader class="pt-4">
                         <div class="flex items-center justify-between flex-wrap gap-2">
                             <div>
-                                <CardTitle class="text-base flex items-center gap-2">
-                                    <BarChart3 class="h-4 w-4 text-muted-foreground" /> Monthly Trends
+                                <CardTitle class="font-serif text-xl flex items-center gap-2">
+                                    <BarChart3 class="h-4 w-4 text-primary" /> Monthly Circulation
                                 </CardTitle>
-                                <CardDescription class="mt-0.5">Library utilization trends</CardDescription>
+                                <CardDescription class="mt-0.5">Loans and room bookings — last twelve months</CardDescription>
                             </div>
                             <div class="flex items-center rounded-lg border bg-muted/40 p-0.5 gap-0.5 text-xs">
                                 <button
@@ -399,31 +327,17 @@ const activeActivities = computed(() => activityTab.value === 'loans' ? recentLo
                 </Card>
 
                 <div class="lg:col-span-2 flex flex-col gap-6">
-                    <Card>
-                        <CardHeader class="pb-2 pt-4"><CardTitle class="text-sm">Loan Breakdown</CardTitle></CardHeader>
-                        <CardContent class="flex items-center gap-4 pb-5">
-                            <svg width="64" height="64" viewBox="0 0 96 96">
-                                <circle v-for="seg in loanDonut" :key="seg.color" cx="48" cy="48" r="38" fill="none" :stroke="seg.color" stroke-width="12" :stroke-dasharray="`${seg.dash} ${2 * Math.PI * 38 - seg.dash}`" :stroke-dashoffset="-seg.offset" transform="rotate(-90 48 48)" />
-                            </svg>
-                            <div class="flex flex-col gap-1 text-xs">
-                                <div class="flex items-center gap-2"><div class="h-2 w-2 rounded-full" style="background:#795553" />Active: {{ loan_status_breakdown?.active }}</div>
-                                <div class="flex items-center gap-2"><div class="h-2 w-2 rounded-full" style="background:#ba1a1a" />Overdue: {{ loan_status_breakdown?.overdue }}</div>
-                                <div class="flex items-center gap-2"><div class="h-2 w-2 rounded-full" style="background:#cba72f" />Returned: {{ loan_status_breakdown?.returned }}</div>
-                            </div>
-                        </CardContent>
-                    </Card>
-                    <Card>
-                        <CardHeader class="pb-2 pt-4"><CardTitle class="text-sm">Booking Breakdown</CardTitle></CardHeader>
-                        <CardContent class="flex items-center gap-4 pb-5">
-                            <svg width="64" height="64" viewBox="0 0 96 96">
-                                <circle v-for="seg in bookingDonut" :key="seg.color" cx="48" cy="48" r="38" fill="none" :stroke="seg.color" stroke-width="12" :stroke-dasharray="`${seg.dash} ${2 * Math.PI * 38 - seg.dash}`" :stroke-dashoffset="-seg.offset" transform="rotate(-90 48 48)" />
-                            </svg>
-                            <div class="flex flex-col gap-1 text-xs">
-                                <div class="flex items-center gap-2"><div class="h-2 w-2 rounded-full" style="background:#cba72f" />Confirmed: {{ booking_status_breakdown?.confirmed }}</div>
-                                <div class="flex items-center gap-2"><div class="h-2 w-2 rounded-full" style="background:#735c00" />Pending: {{ booking_status_breakdown?.pending }}</div>
-                            </div>
-                        </CardContent>
-                    </Card>
+                    <DonutBreakdown title="Loan Breakdown" :segments="[
+                        { label: 'Active', value: loan_status_breakdown?.active ?? 0, color: '#795553' },
+                        { label: 'Overdue', value: loan_status_breakdown?.overdue ?? 0, color: '#ba1a1a' },
+                        { label: 'Returned', value: loan_status_breakdown?.returned ?? 0, color: '#cba72f' },
+                    ]" />
+                    <DonutBreakdown title="Booking Breakdown" :segments="[
+                        { label: 'Confirmed', value: booking_status_breakdown?.confirmed ?? 0, color: '#cba72f' },
+                        { label: 'Pending', value: booking_status_breakdown?.pending ?? 0, color: '#735c00' },
+                        { label: 'Cancelled', value: booking_status_breakdown?.cancelled ?? 0, color: '#ba1a1a' },
+                        { label: 'Completed', value: booking_status_breakdown?.completed ?? 0, color: '#827472' },
+                    ]" />
                 </div>
             </div>
 
@@ -432,8 +346,8 @@ const activeActivities = computed(() => activityTab.value === 'loans' ? recentLo
                     <CardHeader class="pt-4 pb-2">
                         <div class="flex items-center justify-between flex-wrap gap-2">
                             <div>
-                                <CardTitle class="text-base flex items-center gap-2">
-                                    <Activity class="h-4 w-4 text-muted-foreground" /> Recent Activity
+                                <CardTitle class="font-serif text-xl flex items-center gap-2">
+                                    <Activity class="h-4 w-4 text-primary" /> Recent Activity
                                 </CardTitle>
                                 <CardDescription class="mt-0.5">Track system events and records</CardDescription>
                             </div>
@@ -483,11 +397,11 @@ const activeActivities = computed(() => activityTab.value === 'loans' ? recentLo
                                 <p class="text-[10px] text-muted-foreground/60 mt-1">Activities from the past 30 days will appear here.</p>
                             </div>
                         </div>
-                        
+
                         <div class="mt-4 pt-4 border-t border-border px-1">
                             <Link :href="activityTab === 'loans' ? route('admin.loans.index') : route('admin.room-bookings.index')">
                                 <Button variant="outline" size="sm" class="w-full text-xs font-semibold gap-2 rounded-xl h-9 hover:text-primary hover:border-primary/30 hover:bg-primary/5 transition-all">
-                                    View All {{ activityTab === 'loans' ? 'Book Loans' : 'Room Bookings' }} 
+                                    View All {{ activityTab === 'loans' ? 'Book Loans' : 'Room Bookings' }}
                                     <ArrowRight class="h-3 w-3" />
                                 </Button>
                             </Link>
@@ -497,7 +411,7 @@ const activeActivities = computed(() => activityTab.value === 'loans' ? recentLo
 
                 <div class="lg:col-span-3 flex flex-col gap-6">
                     <Card>
-                        <CardHeader class="pt-4"><CardTitle class="text-base">Quick Actions</CardTitle></CardHeader>
+                        <CardHeader class="pt-4"><CardTitle class="font-serif text-xl">Quick Actions</CardTitle></CardHeader>
                         <CardContent class="grid grid-cols-2 gap-2 pb-5">
                             <Link :href="route('admin.books.create')" class="contents"><Button variant="outline" class="h-auto flex-col gap-1.5 py-4"><BookOpen class="h-5 w-5" /><span class="text-xs">Add Book</span></Button></Link>
                             <Link :href="route('admin.loans.create')" class="contents"><Button variant="outline" class="h-auto flex-col gap-1.5 py-4"><Clock class="h-5 w-5" /><span class="text-xs">Issue Loan</span></Button></Link>
@@ -507,7 +421,7 @@ const activeActivities = computed(() => activityTab.value === 'loans' ? recentLo
                     </Card>
 
                     <Card>
-                        <CardHeader class="pt-4"><CardTitle class="text-base">Top Borrowed Books</CardTitle></CardHeader>
+                        <CardHeader class="pt-4"><CardTitle class="font-serif text-xl">Top Borrowed Books</CardTitle></CardHeader>
                         <CardContent class="space-y-3 pb-5">
                             <div v-for="(book, i) in top_books" :key="i" class="flex items-center gap-3">
                                 <div class="flex-1 min-w-0">
@@ -522,6 +436,39 @@ const activeActivities = computed(() => activityTab.value === 'loans' ? recentLo
                     </Card>
                 </div>
             </div>
+
+            <!-- ── Room Utilization ───────────────────────────────── -->
+            <Card>
+                <CardHeader class="pt-4"><CardTitle class="font-serif text-xl">Room Utilization</CardTitle></CardHeader>
+                <CardContent class="space-y-3 pb-5">
+                    <div v-for="room in room_utilization" :key="room.room_number" class="flex items-center gap-3">
+                        <div class="flex-1 min-w-0">
+                            <div class="flex justify-between text-sm">
+                                <span class="font-medium truncate">{{ room.name }} ({{ room.room_number }})</span>
+                                <span class="text-muted-foreground">{{ room.utilization }}%</span>
+                            </div>
+                            <div class="mt-1 h-1.5 w-full rounded-full bg-muted overflow-hidden">
+                                <div class="h-full bg-primary" :style="{ width: `${room.utilization}%` }" />
+                            </div>
+                        </div>
+                    </div>
+                    <p v-if="!room_utilization?.length" class="text-sm text-muted-foreground text-center py-4">No room data available.</p>
+                </CardContent>
+            </Card>
+
+            <!-- ── Announcements ──────────────────────────────────── -->
+            <Card v-if="announcements?.length">
+                <CardHeader class="pt-4"><CardTitle class="font-serif text-xl">Announcements</CardTitle></CardHeader>
+                <CardContent class="space-y-3 pb-5">
+                    <div v-for="a in announcements" :key="a.id" class="flex gap-3">
+                        <img v-if="a.image_path" :src="a.image_path" class="h-12 w-12 rounded-lg object-cover flex-shrink-0" />
+                        <div class="min-w-0">
+                            <p class="text-sm font-bold truncate">{{ a.title }}</p>
+                            <p class="text-xs text-muted-foreground line-clamp-2">{{ stripHtml(a.content) }}</p>
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
         </div>
     </AppLayout>
 </template>

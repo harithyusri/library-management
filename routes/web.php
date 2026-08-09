@@ -159,6 +159,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::delete('/{room_booking}', [Admin\RoomBookingController::class, 'destroy'])->name('destroy');
         });
 
+        // Reservations (Admin side)
+        Route::prefix('reservations')->name('reservations.')->group(function () {
+            Route::get('/', [Admin\ReservationController::class, 'index'])->name('index');
+            Route::patch('/{reservation}/ready', [Admin\ReservationController::class, 'markReady'])->name('ready');
+            Route::patch('/{reservation}/cancel', [Admin\ReservationController::class, 'cancel'])->name('cancel');
+        });
+
         // Fines (Admin side)
         Route::prefix('fines')->name('fines.')->group(function () {
             Route::get('/', [Admin\FineController::class, 'index'])->name('index');
@@ -211,6 +218,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('/', [Member\CatalogController::class, 'index'])->name('index');
             Route::get('/{book}', [Member\CatalogController::class, 'show'])->name('show');
             Route::post('/{book}/borrow', [Member\CatalogController::class, 'borrow'])->name('borrow');
+            Route::post('/{book}/review', [Member\ReviewController::class, 'store'])->name('review.store');
+            Route::delete('/reviews/{review}', [Member\ReviewController::class, 'destroy'])->name('review.destroy');
         });
 
         // Member Fines
@@ -244,6 +253,30 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         // Member Loans
         Route::get('loans', [Member\LoanController::class, 'index'])->name('loans.index');
+        Route::post('loans/{loan}/renew', [Member\LoanController::class, 'renew'])->name('loans.renew');
+
+        // Member Reservations
+        Route::prefix('reservations')->name('reservations.')->group(function () {
+            Route::get('/', [Member\ReservationController::class, 'index'])->name('index');
+            Route::post('/{book}', [Member\ReservationController::class, 'store'])->name('store');
+            Route::delete('/{reservation}', [Member\ReservationController::class, 'destroy'])->name('destroy');
+        });
+
+        // Notifications
+        Route::prefix('notifications')->name('notifications.')->group(function () {
+            Route::get('/', [Member\NotificationController::class, 'index'])->name('index');
+            Route::patch('/{id}/read', [Member\NotificationController::class, 'markRead'])->name('read');
+            Route::patch('/mark-all-read', [Member\NotificationController::class, 'markAllRead'])->name('read-all');
+        });
+
+        // AI Chatbot
+        Route::prefix('chat')->name('chat.')->group(function () {
+            Route::get('/', [Member\ChatController::class, 'index'])->name('index');
+            Route::post('/', [Member\ChatController::class, 'store'])->name('store');
+            Route::get('/{session}', [Member\ChatController::class, 'show'])->name('show');
+            Route::post('/{session}/stream', [Member\ChatController::class, 'stream'])->name('stream');
+            Route::delete('/{session}', [Member\ChatController::class, 'destroy'])->name('destroy');
+        });
     });
 
     // Legacy/Old Dashboard Redirect (Optional, helps if people have old bookmarks)

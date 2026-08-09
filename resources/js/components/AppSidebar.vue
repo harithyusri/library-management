@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
 import { Link, usePage } from '@inertiajs/vue3';
-import { BookOpen, Folder, LayoutGrid, Library, FileCog, Handshake, Settings, Home, DoorOpen, ClipboardList, Receipt, FileSpreadsheet, Megaphone, AlertTriangle} from 'lucide-vue-next';
+import { BookOpen, Folder, LayoutGrid, Library, FileCog, Handshake, Settings, Home, DoorOpen, ClipboardList, Receipt, FileSpreadsheet, Megaphone, AlertTriangle, BookMarked } from 'lucide-vue-next';
 import { computed } from 'vue';
 import AppLogo from './AppLogo.vue';
 
@@ -49,6 +49,12 @@ const memberNavItems = computed<NavItem[]>(() => [
         href: '/member/loans',
         icon: ClipboardList,
         isActive: computed(() => currentUrl.value === '/member/loans' || currentUrl.value.startsWith('/member/loans')),
+    },
+    {
+        title: 'My Reservations',
+        href: '/member/reservations',
+        icon: BookMarked,
+        isActive: computed(() => currentUrl.value.startsWith('/member/reservations')),
     },
     {
         title: 'Room Bookings',
@@ -89,7 +95,7 @@ const adminNavItems = computed<NavItem[]>(() => [
         href: '/admin/books',
         icon: Library,
         isActive: computed(() => 
-            currentUrl.value.startsWith('/admin/books') || currentUrl.value.startsWith('/admin/loans')
+            currentUrl.value.startsWith('/admin/books') || currentUrl.value.startsWith('/admin/loans') || currentUrl.value.startsWith('/admin/reservations')
         ),
         items: [
             {
@@ -103,6 +109,11 @@ const adminNavItems = computed<NavItem[]>(() => [
                 href: '/admin/loans',
                 isActive: computed(() => currentUrl.value.startsWith('/admin/loans')),
                 hidden: !page.props.auth.can?.view_loans,
+            },
+            {
+                title: 'Reservations',
+                href: '/admin/reservations',
+                isActive: computed(() => currentUrl.value.startsWith('/admin/reservations')),
             },
         ],
     },

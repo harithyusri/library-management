@@ -39,7 +39,9 @@ const props = withDefaults(defineProps<Props>(), {
                     <SidebarMenuItem>
                         <CollapsibleTrigger as-child>
                             <SidebarMenuButton tooltip-text="{item.title}"
-                                :class="{ 'bg-sidebar-accent text-sidebar-accent-foreground': item.isActive?.value }">
+                                :class="item.isActive?.value
+                                    ? 'bg-sidebar-accent border-l-2 border-[#c5a059] text-[#c5a059] [&>svg]:text-[#c5a059]'
+                                    : ''">
                                 <component :is="item.icon" v-if="item.icon" />
                                 <span>{{ item.title }}</span>
                                 <ChevronRight
@@ -50,7 +52,9 @@ const props = withDefaults(defineProps<Props>(), {
                             <SidebarMenuSub>
                                 <SidebarMenuSubItem v-for="subItem in item.items" :key="subItem.title">
                                     <SidebarMenuSubButton as-child
-                                        :class="{ 'bg-sidebar-accent text-sidebar-accent-foreground': subItem.isActive?.value }">
+                                        :class="subItem.isActive?.value
+                                            ? 'bg-sidebar-accent border-l-2 border-[#c5a059] text-[#c5a059]'
+                                            : ''">
                                         <Link :href="subItem.href || '#'">
                                             <span>{{ subItem.title }}</span>
                                         </Link>
@@ -64,7 +68,9 @@ const props = withDefaults(defineProps<Props>(), {
                 <!-- Regular menu item (no subitems) -->
                 <SidebarMenuItem v-else>
                     <SidebarMenuButton as-child tooltip-text="{item.title}"
-                        :class="{ 'bg-sidebar-accent text-sidebar-accent-foreground': item.isActive?.value }">
+                        :class="item.isActive?.value
+                            ? 'bg-sidebar-accent border-l-2 border-[#c5a059] text-[#c5a059] [&>a>svg]:text-[#c5a059]'
+                            : ''">
                         <Link :href="item.href || '#'">
                             <component :is="item.icon" v-if="item.icon" />
                             <span>{{ item.title }}</span>

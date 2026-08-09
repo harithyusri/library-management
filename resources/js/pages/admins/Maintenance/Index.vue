@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Head, Link, useForm, router } from '@inertiajs/vue3';
+import PageHeader from '@/components/PageHeader.vue';
 import { ref, watch } from 'vue';
 import { debounce } from 'lodash';
 import AppLayout from '@/layouts/AppLayout.vue';
@@ -41,6 +42,9 @@ const props = defineProps<{
     categories: string[];
     statuses: Record<string, string>;
     priorities: Record<string, string>;
+    libraries: Array<{ id: number; name: string }>;
+    selected_library_id: number | null;
+    is_super_admin: boolean;
 }>();
 
 const breadcrumbs = [
@@ -51,12 +55,14 @@ const breadcrumbs = [
 const search = ref(props.filters.search || '');
 const statusFilter = ref(props.filters.status || 'all');
 const categoryFilter = ref(props.filters.category || 'all');
+const libraryFilter = ref(props.selected_library_id ? String(props.selected_library_id) : 'all');
 
 const updateFilters = debounce(() => {
     router.get(route('admin.maintenance.index'), {
         search: search.value,
         status: statusFilter.value !== 'all' ? statusFilter.value : null,
         category: categoryFilter.value !== 'all' ? categoryFilter.value : null,
+        library_id: libraryFilter.value !== 'all' ? libraryFilter.value : null,
     }, {
         preserveState: true,
         preserveScroll: true,
@@ -64,7 +70,7 @@ const updateFilters = debounce(() => {
     });
 }, 300);
 
-watch([search, statusFilter, categoryFilter], () => {
+watch([search, statusFilter, categoryFilter, libraryFilter], () => {
     updateFilters();
 });
 
@@ -135,29 +141,28 @@ const formatDate = (date: string) => {
         <div class="space-y-6">
             <FlashAlert />
 
-            <!-- Header Section -->
-            <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-2 border-b border-border">
-                <div class="space-y-1">
-                    <h1 class="text-3xl font-black tracking-tight text-foreground">Maintenance Requests <span class="text-primary text-6xl leading-none">.</span></h1>
-                    <p class="text-yellow-800 font-medium">Manage library facility repairs and member feedback.</p>
-                </div>
-
-                <div class="flex items-center gap-3">
+            <PageHeader title="Maintenance Requests " description="Manage library facility repairs and member feedback.">
                     <Badge variant="outline" class="h-11 px-6 rounded-xl flex items-center gap-2">
                         <Activity class="h-4 w-4 text-primary" />
                         <span class="font-bold tracking-tight">{{ reports.total }} Active Reports</span>
                     </Badge>
-                </div>
-            </div>
+            </PageHeader>
 
             <!-- Filters -->
             <div class="grid gap-4 md:grid-cols-4">
-                <div class="md:col-span-2">
+                <div :class="is_super_admin && libraries?.length ? 'md:col-span-1' : 'md:col-span-2'">
                     <Label class="text-xs font-medium text-muted-foreground uppercase tracking-wider">Search</Label>
                     <div class="relative mt-2">
                         <Search class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input v-model="search" placeholder="Search by title or member name..." class="pl-9 bg-background" />
                     </div>
+                </div>
+                <div v-if="is_super_admin && libraries?.length">
+                    <Label class="text-xs font-medium text-muted-foreground uppercase tracking-wider">Library</Label>
+                    <select v-model="libraryFilter" class="mt-2 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-ring focus:ring-ring">
+                        <option value="all">All Libraries</option>
+                        <option v-for="lib in libraries" :key="lib.id" :value="String(lib.id)">{{ lib.name }}</option>
+                    </select>
                 </div>
                 <div>
                     <Label class="text-xs font-medium text-muted-foreground uppercase tracking-wider">Status</Label>
@@ -176,7 +181,7 @@ const formatDate = (date: string) => {
             </div>
 
             <!-- Table -->
-            <Card class="overflow-hidden border-none shadow-sm">
+            <Card class="overflow-hidden border-none">
                 <CardContent class="p-0">
                     <div v-if="reports.data.length === 0" class="flex flex-col items-center justify-center py-24 text-center px-4">
                         <div class="bg-muted rounded-full p-4 mb-4">
@@ -264,7 +269,7 @@ const formatDate = (date: string) => {
 
         <!-- Update Modal -->
         <div v-if="isModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-            <Card class="w-full max-w-2xl overflow-hidden shadow-2xl">
+            <Card class="w-full max-w-2xl overflow-hidden">
                 <CardHeader class="border-b border-border bg-muted/50 p-6">
                     <div class="flex items-center justify-between">
                         <div class="space-y-1">
@@ -301,7 +306,7 @@ const formatDate = (date: string) => {
 
                         <div class="space-y-6">
                             <div class="flex items-center gap-4 p-4 bg-muted rounded-2xl border border-border">
-                                <div class="h-10 w-10 rounded-xl bg-card flex items-center justify-center shadow-sm">
+                                <div class="h-10 w-10 rounded-xl bg-card flex items-center justify-center">
                                     <User class="h-5 w-5 text-primary" />
                                 </div>
                                 <div class="space-y-0.5">
@@ -312,7 +317,7 @@ const formatDate = (date: string) => {
                             </div>
 
                             <div class="flex items-center gap-4 p-4 bg-muted rounded-2xl border border-border">
-                                <div class="h-10 w-10 rounded-xl bg-card flex items-center justify-center shadow-sm">
+                                <div class="h-10 w-10 rounded-xl bg-card flex items-center justify-center">
                                     <Calendar class="h-5 w-5 text-primary" />
                                 </div>
                                 <div class="space-y-0.5">

@@ -3,59 +3,48 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\ReturnLoanRequest;
+use App\Http\Requests\Admin\StoreLoanRequest;
+use App\Models\BookCopy;
+use App\Models\Library;
 use App\Models\Loan;
 use App\Models\User;
-use App\Models\BookCopy;
+use App\Repositories\LoanRepository;
+use App\Services\LoanService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
-use Illuminate\Support\Facades\Auth;
 
 class LoanController extends Controller
 {
-    /**
-     * Display a listing of loans.
-     */
+    public function __construct(
+        private LoanRepository $loans,
+        private LoanService $loanService,
+    ) {}
+
     public function index(Request $request)
     {
-        $query = Loan::with(['bookCopy.book', 'user']);
+        $user          = $request->user();
+        $isSuperAdmin  = $user->hasRole('Super Admin');
+        $libraries     = [];
+        $selectedLibraryId = null;
 
-        // Search by borrower name
-        if ($request->has('search') && $request->search) {
-            $query->whereHas('user', function ($q) use ($request) {
-                $q->where('name', 'like', "%{$request->search}%");
-            });
+        if ($isSuperAdmin) {
+            $libraries         = Library::where('is_active', true)->orderBy('name')->get(['id', 'name']);
+            $selectedLibraryId = $request->integer('library_id') ?: null;
         }
 
-        // Search by book title
-        if ($request->has('book_search') && $request->book_search) {
-            $query->whereHas('bookCopy.book', function ($q) use ($request) {
-                $q->where('title', 'like', "%{$request->book_search}%");
-            });
-        }
-
-        // Filter by status
-        if ($request->has('status') && $request->status !== 'all') {
-            if ($request->status === Loan::STATUS_ACTIVE) {
-                $query->whereNull('returned_date');
-            } elseif ($request->status === Loan::STATUS_RETURNED) {
-                $query->whereNotNull('returned_date');
-            } elseif ($request->status === Loan::STATUS_OVERDUE) {
-                $query->whereNull('returned_date')
-                    ->where('due_date', '<', now());
-            }
-        }
-
-        // Sort
-        $sortBy = $request->get('sort_by', 'borrowed_date');
-        $sortOrder = $request->get('sort_order', 'desc');
-        $query->orderBy($sortBy, $sortOrder);
-
-        $loans = $query->paginate(15)->withQueryString();
+        $loans = $this->loans->paginatedForAdmin(
+            $request->only(['search', 'book_search', 'status', 'sort_by', 'sort_order']),
+            $isSuperAdmin ? $selectedLibraryId : null
+        );
 
         return Inertia::render('admins/Loans/Index', [
-            'loans' => $loans,
-            'filters' => $request->only(['search', 'book_search', 'status', 'sort_by', 'sort_order']),
-            'statuses' => Loan::getStatuses(),
+            'loans'               => $loans,
+            'filters'             => $request->only(['search', 'book_search', 'status', 'sort_by', 'sort_order']),
+            'statuses'            => Loan::getStatuses(),
+            'libraries'           => $libraries,
+            'selected_library_id' => $selectedLibraryId,
+            'is_super_admin'      => $isSuperAdmin,
         ]);
     }
 
@@ -78,42 +67,13 @@ class LoanController extends Controller
         ]);
     }
 
-    /**
-     * Store a newly created loan.
-     */
-    public function store(Request $request)
+    public function store(StoreLoanRequest $request)
     {
-        $validated = $request->validate([
-            'user_id' => 'required|exists:users,id',
-            'book_copy_id' => 'required|exists:book_copies,id',
-            'borrowed_date' => 'required|date',
-            'due_date' => 'required|date|after_or_equal:borrowed_date',
-            'notes' => 'nullable|string|max:1000',
-        ]);
-
-        // Check if book copy is available
-        $bookCopy = BookCopy::findOrFail($validated['book_copy_id']);
-
-        if ($bookCopy->status !== 'available') {
-            return redirect()->back()
-                ->withErrors(['book_copy_id' => 'This book copy is not available for borrowing.'])
-                ->withInput();
+        try {
+            $loan = $this->loanService->issueLoan($request->validated(), $request->user()->id);
+        } catch (\RuntimeException $e) {
+            return back()->withErrors(['book_copy_id' => $e->getMessage()])->withInput();
         }
-
-        // Create the loan
-        $loan = Loan::create([
-            'user_id' => $validated['user_id'],
-            'book_copy_id' => $validated['book_copy_id'],
-            'librarian_id' => Auth::id(), // Current logged-in librarian
-            'borrowed_date' => $validated['borrowed_date'],
-            'due_date' => $validated['due_date'],
-            'notes' => $validated['notes'] ?? null,
-            'status' => 'active',
-            'library_id' => $bookCopy->library_id,
-        ]);
-
-        // Update book copy status
-        $bookCopy->update(['status' => 'borrowed']);
 
         return redirect()->route('admin.loans.show', $loan->id)
             ->with('success', 'Loan created successfully!');
@@ -166,41 +126,14 @@ class LoanController extends Controller
         return response()->json(['data' => $copies]);
     }
 
-    /**
-     * Return a borrowed book.
-     */
-    public function return(Request $request, Loan $loan)
+    public function return(ReturnLoanRequest $request, Loan $loan)
     {
-        if ($loan->returned_date) {
-            return redirect()->back()->with('error', 'This book has already been returned.');
+        try {
+            $this->loanService->returnBook($loan, $request->validated());
+        } catch (\RuntimeException $e) {
+            return back()->with('error', $e->getMessage());
         }
 
-        $validated = $request->validate([
-            'returned_date' => 'required|date',
-            'condition_notes' => 'nullable|string|max:1000',
-        ]);
-
-        // Update loan
-        $loan->update([
-            'returned_date' => $validated['returned_date'],
-            'status' => 'returned',
-            'notes' => $loan->notes . "\n\nReturn notes: " . ($validated['condition_notes'] ?? ''),
-        ]);
-
-        // Update book copy status back to available
-        $loan->bookCopy->update(['status' => 'available']);
-
-        // Calculate fine if overdue
-        if ($loan->due_date < $validated['returned_date']) {
-            $daysOverdue = (strtotime($validated['returned_date']) - strtotime($loan->due_date)) / 86400;
-            $fineAmount = $daysOverdue * 1.00; // $1 per day
-
-            $loan->update([
-                'fine_amount' => $fineAmount,
-                'fine_paid' => false,
-            ]);
-        }
-
-        return redirect()->back()->with('success', 'Book returned successfully!');
+        return back()->with('success', 'Book returned successfully!');
     }
 }

@@ -2,6 +2,7 @@
 import { CheckIcon, ChevronsUpDownIcon } from 'lucide-vue-next'
 import { route } from "ziggy-js";
 import { ref } from 'vue';
+import PageHeader from '@/components/PageHeader.vue';
 import { router, usePage, useForm, Head } from '@inertiajs/vue3';
 import type { PageProps } from '@inertiajs/core';
 import AppLayout from '@/layouts/AppLayout.vue';
@@ -242,13 +243,7 @@ const submitPublisher = () => {
         <div class="space-y-6">
 
             <FlashAlert />
-            <!-- Header -->
-            <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-2 border-b border-border">
-                <div class="space-y-1">
-                    <h1 class="text-3xl font-black tracking-tight text-foreground">Add New Book <span class="text-primary text-6xl leading-none">.</span></h1>
-                    <p class="text-muted-foreground font-medium">Fill in the details below to add a new book to your library.</p>
-                </div>
-            </div>
+            <PageHeader title="Add New Book " description="Fill in the details below to add a new book to your library." />
 
             <!-- Form -->
             <form @submit.prevent="submitForm" class="space-y-6">

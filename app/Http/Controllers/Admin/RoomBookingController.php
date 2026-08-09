@@ -3,107 +3,49 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\StoreRoomBookingRequest;
+use App\Http\Requests\Admin\UpdateBookingStatusRequest;
+use App\Http\Requests\Admin\UpdateRoomBookingRequest;
+use App\Http\Resources\RoomBookingResource;
+use App\Models\Library;
 use App\Models\Room;
 use App\Models\RoomBooking;
-use App\Models\User;
-use Carbon\Carbon;
+use App\Repositories\RoomBookingRepository;
+use App\Services\RoomBookingService;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 
 class RoomBookingController extends Controller
 {
-    private function formatTime(string $time): string
-    {
-        return substr($time, 0, 5);
-    }
-
-    private function calcDuration(string $start, string $end): float
-    {
-        $s = Carbon::createFromFormat('H:i', $start);
-        $e = Carbon::createFromFormat('H:i', $end);
-        return $e->diffInMinutes($s) / 60;
-    }
-
+    public function __construct(
+        private RoomBookingService $bookingService,
+        private RoomBookingRepository $repo,
+    ) {}
+    // Remove private helpers — now in RoomBookingService
     private function serializeBooking(RoomBooking $b): array
     {
-        return [
-            'id'                   => $b->id,
-            'room_id'              => $b->room_id,
-            'user_id'              => $b->user_id,
-            'approved_by'         => $b->approved_by,
-            'booking_date'        => $b->booking_date->toDateString(),
-            'start_time'          => $this->formatTime($b->start_time),
-            'end_time'            => $this->formatTime($b->end_time),
-            'status'              => $b->status,
-            'purpose'             => $b->purpose,
-            'number_of_attendees' => $b->number_of_attendees,
-            'special_requests'    => $b->special_requests,
-            'notes'               => $b->notes,
-            'cancellation_reason' => $b->cancellation_reason,
-            'cancelled_at'        => $b->cancelled_at,
-            'approved_at'         => $b->approved_at,
-            'duration_hours'      => $b->duration_in_hours,
-            'total_cost'          => $b->total_cost,
-            'created_at'          => $b->created_at,
-            'room' => $b->relationLoaded('room') ? array_merge($b->room->toArray(), [
-                'image_url' => $b->room->image ? asset('storage/' . $b->room->image) : null,
-            ]) : null,
-            'user'         => $b->relationLoaded('user') ? $b->user : null,
-            'approvedBy'   => $b->relationLoaded('approvedBy') ? $b->approvedBy : null,
-        ];
-    }
-
-    private function bookingRules(bool $isUpdate = false): array
-    {
-        return [
-            'room_id'             => ['required', 'exists:rooms,id'],
-            'booking_date'        => ['required', 'date', 'after_or_equal:today'],
-            'start_time'          => ['required', 'date_format:H:i'],
-            'end_time'            => ['required', 'date_format:H:i', 'after:start_time'],
-            'purpose'             => ['nullable', 'string', 'max:255'],
-            'number_of_attendees' => ['nullable', 'integer', 'min:1', 'max:500'],
-            'special_requests'    => ['nullable', 'string'],
-            'notes'               => ['nullable', 'string'],
-            'user_id'             => ['nullable', 'exists:users,id'],
-        ];
-    }
-
-    private function hasConflict(array $validated, ?int $excludeId = null): bool
-    {
-        return RoomBooking::where('room_id', $validated['room_id'])
-            ->whereDate('booking_date', $validated['booking_date'])
-            ->whereIn('status', ['pending', 'confirmed'])
-            ->when($excludeId, fn ($q) => $q->where('id', '!=', $excludeId))
-            ->where(function ($q) use ($validated) {
-                $q->where('start_time', '<', $validated['end_time'])
-                  ->where('end_time', '>', $validated['start_time']);
-            })
-            ->exists();
+        return (new RoomBookingResource($b->loadMissing(['room', 'user', 'approver'])))->resolve();
     }
 
     public function index(Request $request)
     {
-        $query = RoomBooking::with(['room:id,name,room_number,hourly_rate', 'user:id,name']);
+        $user          = $request->user();
+        $isSuperAdmin  = $user->hasRole('Super Admin');
+        $libraries     = [];
+        $selectedLibraryId = null;
 
-        $bookings = $query->orderBy('booking_date')
-            ->orderBy('start_time')
-            ->get()
-            ->map(fn ($b) => [
-                'id'           => $b->id,
-                'room'         => $b->room,
-                'user'         => $b->user,
-                'booking_date' => $b->booking_date->toDateString(),
-                'start_time'   => $this->formatTime($b->start_time),
-                'end_time'     => $this->formatTime($b->end_time),
-                'status'       => $b->status,
-                'purpose'      => $b->purpose,
-                'duration_hours' => $b->duration_in_hours,
-                'total_cost'   => $b->total_cost ?? 0,
-            ]);
+        if ($isSuperAdmin) {
+            $libraries         = Library::where('is_active', true)->orderBy('name')->get(['id', 'name']);
+            $selectedLibraryId = $request->integer('library_id') ?: null;
+        }
+
+        $bookings = $this->repo->forAdmin($isSuperAdmin ? $selectedLibraryId : null);
 
         return Inertia::render('admins/RoomBookings/Index', [
-            'bookings' => $bookings,
+            'bookings'            => RoomBookingResource::collection($bookings),
+            'libraries'           => $libraries,
+            'selected_library_id' => $selectedLibraryId,
+            'is_super_admin'      => $isSuperAdmin,
             'can' => [
                 'createBookings' => $request->user()->can('create room bookings'),
                 'editBookings'   => $request->user()->can('edit room bookings'),
@@ -145,46 +87,13 @@ class RoomBookingController extends Controller
         ]);
     }
 
-    public function store(Request $request)
+    public function store(StoreRoomBookingRequest $request)
     {
-        if (!$request->user()->can('create room bookings')) {
-            abort(403, 'Unauthorized');
+        try {
+            $this->bookingService->createBooking($request->validated(), $request->user());
+        } catch (\RuntimeException $e) {
+            return back()->withErrors(['start_time' => $e->getMessage()]);
         }
-
-        $validated = $request->validate($this->bookingRules());
-
-        $room = Room::findOrFail($validated['room_id']);
-
-        if ($room->status !== 'available') {
-            return back()->withErrors(['room_id' => 'This room is not available for booking.']);
-        }
-
-        if ($this->hasConflict($validated)) {
-            return back()->withErrors(['start_time' => 'This time slot is already booked. Please choose a different time.']);
-        }
-
-        $duration = $this->calcDuration($validated['start_time'], $validated['end_time']);
-        $cost     = round($room->hourly_rate * $duration, 2);
-
-        $userId = $request->user()->id;
-        if (!empty($validated['user_id'])) {
-            $userId = $validated['user_id'];
-        }
-
-        RoomBooking::create([
-            'room_id'             => $validated['room_id'],
-            'user_id'             => $userId,
-            'booking_date'        => $validated['booking_date'],
-            'start_time'          => $validated['start_time'],
-            'end_time'            => $validated['end_time'],
-            'status'              => 'pending',
-            'purpose'             => $validated['purpose'] ?? null,
-            'number_of_attendees' => $validated['number_of_attendees'] ?? null,
-            'special_requests'    => $validated['special_requests'] ?? null,
-            'notes'               => $validated['notes'] ?? null,
-            'total_cost'          => $cost,
-            'library_id'          => $room->library_id,
-        ]);
 
         return redirect()->route('admin.room-bookings.index')
             ->with('success', 'Booking created successfully!');
@@ -246,92 +155,30 @@ class RoomBookingController extends Controller
         ]);
     }
 
-    public function update(Request $request, RoomBooking $roomBooking)
+    public function update(UpdateRoomBookingRequest $request, RoomBooking $roomBooking)
     {
-        if (!$request->user()->can('edit room bookings')) {
-            abort(403, 'Unauthorized');
+        try {
+            $this->bookingService->updateBooking($roomBooking, $request->validated());
+        } catch (\RuntimeException $e) {
+            return back()->withErrors(['start_time' => $e->getMessage()]);
         }
-
-        if ($roomBooking->status !== 'pending') {
-            return back()->withErrors(['status' => 'Only pending bookings can be edited.']);
-        }
-
-        $validated = $request->validate($this->bookingRules(isUpdate: true));
-
-        if ($this->hasConflict($validated, $roomBooking->id)) {
-            return back()->withErrors(['start_time' => 'This time slot is already booked. Please choose a different time.']);
-        }
-
-        $room     = Room::findOrFail($validated['room_id']);
-        $duration = $this->calcDuration($validated['start_time'], $validated['end_time']);
-        $cost     = round($room->hourly_rate * $duration, 2);
-
-        $userId = $roomBooking->user_id;
-        if (!empty($validated['user_id'])) {
-            $userId = $validated['user_id'];
-        }
-
-        $roomBooking->update([
-            'room_id'             => $validated['room_id'],
-            'user_id'             => $userId,
-            'booking_date'        => $validated['booking_date'],
-            'start_time'          => $validated['start_time'],
-            'end_time'            => $validated['end_time'],
-            'purpose'             => $validated['purpose'] ?? null,
-            'number_of_attendees' => $validated['number_of_attendees'] ?? null,
-            'special_requests'    => $validated['special_requests'] ?? null,
-            'notes'               => $validated['notes'] ?? null,
-            'total_cost'          => $cost,
-            'library_id'          => $room->library_id,
-        ]);
 
         return redirect()->route('admin.room-bookings.show', $roomBooking->id)
             ->with('success', 'Booking updated successfully!');
     }
 
-    public function updateStatus(Request $request, RoomBooking $roomBooking)
+    public function updateStatus(UpdateBookingStatusRequest $request, RoomBooking $roomBooking)
     {
-        if (!$request->user()->can('edit room bookings')) {
-            abort(403, 'Unauthorized');
+        try {
+            $this->bookingService->updateStatus(
+                $roomBooking,
+                $request->validated('status'),
+                $request->user(),
+                $request->validated('cancellation_reason')
+            );
+        } catch (\RuntimeException $e) {
+            return back()->withErrors(['status' => $e->getMessage()]);
         }
-
-        $validated = $request->validate([
-            'status'              => ['required', Rule::in(['pending', 'confirmed', 'cancelled', 'completed'])],
-            'cancellation_reason' => ['required_if:status,cancelled', 'nullable', 'string', 'max:500'],
-        ]);
-
-        $allowed = match ($roomBooking->status) {
-            'pending'   => ['confirmed', 'cancelled'],
-            'confirmed' => ['completed', 'cancelled'],
-            'cancelled' => ['pending'],
-            'completed' => [],
-            default     => [],
-        };
-
-        if (!in_array($validated['status'], $allowed)) {
-            return back()->withErrors([
-                'status' => "Cannot change status from '{$roomBooking->status}' to '{$validated['status']}'.",
-            ]);
-        }
-
-        $updates = ['status' => $validated['status']];
-
-        if ($validated['status'] === 'confirmed') {
-            $updates['approved_by'] = $request->user()->id;
-            $updates['approved_at'] = now();
-        }
-
-        if ($validated['status'] === 'cancelled') {
-            $updates['cancellation_reason'] = $validated['cancellation_reason'] ?? null;
-            $updates['cancelled_at']        = now();
-        }
-
-        if ($validated['status'] === 'pending') {
-            $updates['cancellation_reason'] = null;
-            $updates['cancelled_at']        = null;
-        }
-
-        $roomBooking->update($updates);
 
         return back()->with('success', 'Booking status updated.');
     }

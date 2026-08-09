@@ -1,112 +1,92 @@
 <?php
+
 namespace App\Http\Controllers\Member;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Member\BorrowBookRequest;
 use App\Models\Book;
-use App\Models\BookCopy;
 use App\Models\Category;
 use App\Models\Genre;
-use App\Models\Loan;
+use App\Repositories\BookRepository;
+use App\Services\LoanService;
+use App\Services\RecommendationService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
-use Illuminate\Support\Facades\DB;
 
 class CatalogController extends Controller
 {
-    /**
-     * Display the member-facing book catalog.
-     */
+    public function __construct(
+        private BookRepository $books,
+        private LoanService $loanService,
+        private RecommendationService $recommendations,
+    ) {}
+
     public function index(Request $request): Response
     {
-        $query = Book::with(['genres', 'category', 'publisher'])
-            ->withCount(['copies as total_copies'])
-            ->withCount(['copies as available_copies' => function ($q) {
-                $q->where('status', 'available');
-            }]);
-
-        // Search
-        if ($request->filled('search')) {
-            $query->search($request->search);
-        }
-
-        // Filter by Genre
-        if ($request->filled('genre') && $request->genre !== 'all') {
-            $query->whereHas('genres', function ($q) use ($request) {
-                $q->where('genres.id', $request->genre);
-            });
-        }
-
-        // Filter by Category
-        if ($request->filled('category') && $request->category !== 'all') {
-            $query->where('category_id', $request->category);
-        }
-
-        $books = $query->paginate(12)->withQueryString();
-
         return Inertia::render('members/Catalog/Index', [
-            'books'      => $books,
+            'books'      => $this->books->paginatedCatalog($request->only(['search', 'genre', 'category'])),
             'filters'    => $request->only(['search', 'genre', 'category']),
-            'genres'     => Genre::orderBy('name')->get(),
-            'categories' => Category::orderBy('name')->get(),
+            'genres'     => $this->books->allGenres(),
+            'categories' => $this->books->allCategories(),
             'is_member'  => $request->user()?->isMember() ?? false,
         ]);
     }
 
-    /**
-     * Display the detailed book view for members.
-     */
     public function show(Request $request, Book $book): Response
     {
-        $book->load(['genres', 'category', 'publisher', 'copies' => function ($q) {
-            $q->with('library')->orderBy('status');
-        }]);
+        $book->load(['genres', 'category', 'publisher', 'copies' => fn ($q) =>
+            $q->with('library')->orderBy('status')
+        , 'reviews' => fn ($q) => $q->with('user:id,name')->latest()]);
 
-        $availableCopiesCount = $book->copies()->where('status', 'available')->count();
+        $user = $request->user();
+
+        $hasActiveReservation = $user?->isMember()
+            ? \App\Models\Reservation::where('user_id', $user->id)
+                ->where('book_id', $book->id)
+                ->whereIn('status', ['pending', 'ready'])
+                ->exists()
+            : false;
+
+        $hasBorrowed = $user?->isMember()
+            ? $user->loans()
+                ->whereHas('bookCopy', fn ($q) => $q->where('book_id', $book->id))
+                ->whereNotNull('returned_date')
+                ->exists()
+            : false;
+
+        $userReview = $user?->isMember()
+            ? $book->reviews->firstWhere('user_id', $user->id)
+            : null;
+
+        $recommendedBooks = ($user?->isMember())
+            ? $this->recommendations->forUser($user, $book)
+            : collect();
 
         return Inertia::render('members/Catalog/Show', [
             'book'                   => $book,
-            'available_copies_count' => $availableCopiesCount,
-            'is_member'              => auth()->user()?->isMember() ?? false,
+            'available_copies_count' => $book->copies()->where('status', 'available')->count(),
+            'is_member'              => $user?->isMember() ?? false,
+            'has_active_reservation' => $hasActiveReservation,
+            'has_borrowed'           => $hasBorrowed,
+            'user_review'            => $userReview,
+            'recommended_books'      => $recommendedBooks->map(fn ($b) => [
+                'id'               => $b->id,
+                'title'            => $b->title,
+                'author_name'      => $b->author_name,
+                'cover_image'      => $b->cover_image_url,
+                'category'         => $b->category?->only('id', 'name'),
+                'genres'           => $b->genres->map->only('id', 'name')->values(),
+                'available_copies' => $b->copies->where('status', 'available')->count(),
+            ]),
         ]);
     }
 
-    /**
-     * Automatically borrow the first available copy of a book.
-     */
-    public function borrow(Request $request, Book $book)
+    public function borrow(BorrowBookRequest $request, Book $book)
     {
-        $user = $request->user();
+        $loan = $this->loanService->borrowBook($request->user(), $book, $request->input('library_id'));
 
-        if (!$user->isMember()) {
-            return back()->with('error', 'Only members can borrow books.');
-        }
-
-        // Find first available copy
-        $copy = $book->copies()->where('status', 'available')->first();
-
-        if (!$copy) {
-            return back()->with('error', 'No copies are currently available for this book.');
-        }
-
-        // Standard 14-day loan
-        try {
-            DB::transaction(function () use ($user, $copy) {
-                Loan::create([
-                    'book_copy_id'  => $copy->id,
-                    'user_id'       => $user->id,
-                    'borrowed_date' => now(),
-                    'due_date'      => now()->addDays(14),
-                    'status'        => Loan::STATUS_ACTIVE,
-                ]);
-
-                $copy->update(['status' => 'borrowed']);
-            });
-
-            return redirect()->route('member.catalog.index')
-                ->with('success', "You have successfully borrowed \"{$book->title}\". Due date: " . now()->addDays(14)->toFormattedDateString());
-        } catch (\Exception $e) {
-            return back()->with('error', 'An error occurred while borrowing the book. Please try again.');
-        }
+        return redirect()->route('member.catalog.index')
+            ->with('success', "You have successfully borrowed \"{$book->title}\". Due date: {$loan->due_date->toFormattedDateString()}");
     }
 }

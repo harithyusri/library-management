@@ -63,7 +63,7 @@ class DashboardController extends Controller
                 'status'     => $b->status,
             ]);
 
-        $recentActivities = $recentLoans->merge($recentBookings)->values();
+        $recentActivities = $recentLoans->concat($recentBookings)->values();
 
         return Inertia::render('members/Dashboard', [
             'is_member'         => true,

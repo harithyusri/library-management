@@ -112,6 +112,11 @@ class Book extends Model implements Auditable
         return $this->hasMany(BookCopy::class);
     }
 
+    public function reviews()
+    {
+        return $this->hasMany(BookReview::class);
+    }
+
     public static function getFormatOptions()
     {
         return self::formatOptions();

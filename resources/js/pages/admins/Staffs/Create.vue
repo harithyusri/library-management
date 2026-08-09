@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { route } from 'ziggy-js'
+import PageHeader from '@/components/PageHeader.vue'
 import { reactive, ref, computed } from 'vue'
 import { router, Head, Link, useForm, usePage } from '@inertiajs/vue3'
 import AppLayout from '@/layouts/AppLayout.vue'
@@ -91,8 +92,7 @@ const submit = () => {
 
             <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-2 border-b border-slate-100">
                 <div class="space-y-1">
-                    <h1 class="text-3xl font-black tracking-tight text-slate-900">Add New Staff <span class="text-indigo-600 text-6xl leading-none">.</span></h1>
-                    <p class="text-slate-500 font-medium tracking-tight">Create a new system account and associate it with a department.</p>
+                    <PageHeader title="Add New Staff " description="Create a new system account and associate it with a department." />
                 </div>
 
                 <div class="flex items-center gap-2">

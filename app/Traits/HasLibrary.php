@@ -18,8 +18,8 @@ trait HasLibrary
 
         static::creating(function ($model) {
             if (auth()->check() && ! $model->library_id) {
-                // If the user is staff, assign their library_id automatically
                 $user = auth()->user();
+                $user->loadMissing('staff');
                 if ($user->staff && $user->staff->library_id) {
                     $model->library_id = $user->staff->library_id;
                 }

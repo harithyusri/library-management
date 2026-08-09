@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { route } from "ziggy-js";
 import { reactive, ref } from 'vue';
+import PageHeader from '@/components/PageHeader.vue';
 import { Link, router } from '@inertiajs/vue3';
 import { type BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/vue3';
@@ -179,22 +180,14 @@ const formatDate = (date: string): string => {
 
             <FlashAlert />
 
-            <!-- Header Section -->
-            <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-2 border-b border-slate-100">
-                <div class="space-y-1">
-                    <h1 class="text-3xl font-black tracking-tight text-slate-900">System Staff <span class="text-indigo-600 text-6xl leading-none">.</span></h1>
-                    <p class="text-slate-500 font-medium">Manage administrators, librarians, and staff access roles.</p>
-                </div>
-
-                <div class="flex items-center gap-3">
+            <PageHeader title="System Staff " description="Manage administrators, librarians, and staff access roles.">
                     <Link v-if="can.createUsers" :href="route('admin.staffs.create')" class="contents">
-                        <Button class="bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg px-4 py-2 text-sm font-bold shadow-lg shadow-indigo-100 dark:shadow-none flex items-center gap-2">
+                        <Button class="bg-primary hover:opacity-90 text-primary-foreground rounded-lg px-4 py-2 text-sm font-bold flex items-center gap-2">
                             <UserPlusIcon class="h-5 w-5" />
                             Add New Staff
                         </Button>
                     </Link>
-                </div>
-            </div>
+            </PageHeader>
 
             <!-- Filters -->
             <Card>

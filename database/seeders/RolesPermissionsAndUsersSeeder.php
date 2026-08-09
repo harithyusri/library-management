@@ -134,6 +134,12 @@ class RolesPermissionsAndUsersSeeder extends Seeder
             'create reservations',
             'cancel reservations',
 
+            // Library Management
+            'view libraries',
+            'create libraries',
+            'edit libraries',
+            'delete libraries',
+
             // Audit Logs
             'view audits',
 
@@ -176,6 +182,8 @@ class RolesPermissionsAndUsersSeeder extends Seeder
             'view rooms', 'create rooms', 'edit rooms', 'delete rooms',
             'view room bookings', 'create room bookings', 'edit room bookings', 'delete room bookings', 'cancel room bookings',
             'view reservations', 'create reservations', 'cancel reservations',
+            'view libraries', 'create libraries', 'edit libraries', 'delete libraries',
+            'view audits',
             'view announcements', 'create announcements', 'edit announcements', 'delete announcements',
         ]);
 
@@ -196,6 +204,7 @@ class RolesPermissionsAndUsersSeeder extends Seeder
             'view room bookings', 'create room bookings', 'edit room bookings', 'delete room bookings', 'cancel room bookings',
             'view reservations', 'create reservations', 'cancel reservations',
             'view announcements', 'create announcements', 'edit announcements', 'delete announcements',
+            'view audits',
         ]);
 
         // 4. Library Members - Basic user (borrower)
@@ -321,7 +330,7 @@ class RolesPermissionsAndUsersSeeder extends Seeder
                 'phone' => '+1-555-1001',
                 'dob' => '1990-05-15',
                 'gender' => 'male',
-                'membership_type' => 'basic',
+                'membership_type' => 'standard',
                 'emergency_name' => 'Jane Smith',
                 'emergency_phone' => '+1-555-1002',
                 'emergency_relationship' => 'Spouse',
@@ -365,7 +374,7 @@ class RolesPermissionsAndUsersSeeder extends Seeder
                 'phone' => '+1-555-1009',
                 'dob' => '1995-07-18',
                 'gender' => 'male',
-                'membership_type' => 'basic',
+                'membership_type' => 'standard',
                 'emergency_name' => 'Emma Taylor',
                 'emergency_phone' => '+1-555-1010',
                 'emergency_relationship' => 'Sister',

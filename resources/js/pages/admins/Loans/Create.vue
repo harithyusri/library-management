@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted, onUnmounted, type Ref } from 'vue';
+import PageHeader from '@/components/PageHeader.vue';
 import { router, useForm, Head } from '@inertiajs/vue3';
 import { index, store } from '@/routes/admin/loans';
 import type { DateValue } from '@internationalized/date';
@@ -17,6 +18,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { CalendarIcon, SearchIcon, CheckIcon, Loader2Icon } from 'lucide-vue-next';
 import { cn } from '@/lib/utils';
+import BarcodeScanner from '@/components/BarcodeScanner.vue';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -204,6 +206,10 @@ const selectBookCopy = (copy: BookCopy) => {
     showSearchDropdown.value = false;
 };
 
+const onBarcodeScanned = (copy: BookCopy) => {
+    selectBookCopy(copy);
+};
+
 const clearCopySelection = () => {
     selectedCopy.value = null;
     form.book_copy_id = '';
@@ -245,13 +251,7 @@ onUnmounted(() => {
         <div class="space-y-6">
 
             <FlashAlert />
-            <!-- Header -->
-            <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-2 border-b border-border">
-                <div class="space-y-1">
-                    <h1 class="text-3xl font-black tracking-tight text-foreground">Create New Loan <span class="text-primary text-6xl leading-none">.</span></h1>
-                    <p class="text-muted-foreground font-medium">Issue a book to a borrower</p>
-                </div>
-            </div>
+            <PageHeader title="Create New Loan " description="Issue a book to a borrower" />
 
             <!-- Form -->
             <form @submit.prevent="submitForm" class="space-y-6">
@@ -325,15 +325,18 @@ onUnmounted(() => {
                             </Label>
 
                             <div class="search-container relative mt-2">
-                                <div class="relative">
-                                    <SearchIcon
-                                        class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                                    <Input v-model="copySearchQuery" @input="handleSearchChange"
-                                        @focus="() => { if (copySearchQuery.length >= 2) showSearchDropdown = true }"
-                                        type="text" placeholder="Search by title, barcode, ISBN..." class="pl-10"
-                                        :class="{ 'border-destructive': form.errors.book_copy_id }" />
-                                    <Loader2Icon v-if="isSearching"
-                                        class="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-muted-foreground" />
+                                <div class="relative flex gap-2">
+                                    <div class="relative flex-1">
+                                        <SearchIcon
+                                            class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                                        <Input v-model="copySearchQuery" @input="handleSearchChange"
+                                            @focus="() => { if (copySearchQuery.length >= 2) showSearchDropdown = true }"
+                                            type="text" placeholder="Search by title, barcode, ISBN..." class="pl-10"
+                                            :class="{ 'border-destructive': form.errors.book_copy_id }" />
+                                        <Loader2Icon v-if="isSearching"
+                                            class="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-muted-foreground" />
+                                    </div>
+                                    <BarcodeScanner @scanned="onBarcodeScanned" />
                                 </div>
 
                                 <!-- Custom Dropdown -->

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
+import PageHeader from '@/components/PageHeader.vue';
 import { BreadcrumbItemType } from '@/types';
 import { Head, useForm, router } from '@inertiajs/vue3';
 import { Button } from '@/components/ui/button';
@@ -161,13 +162,7 @@ const getStatusBadge = (status: string) => {
         <Head title="Room Reservation Reports" />
 
         <div class="space-y-6">
-            <!-- Header Section -->
-            <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-2 border-b border-slate-100">
-                <div class="space-y-1">
-                    <h1 class="text-3xl font-black tracking-tight text-slate-900">Room Usage Reports <span class="text-indigo-600 text-6xl leading-none">.</span></h1>
-                    <p class="text-slate-500 font-medium">Generate and download detailed reports of room bookings and usage.</p>
-                </div>
-            </div>
+            <PageHeader title="Room Usage Reports " description="Generate and download detailed reports of room bookings and usage." />
 
             <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:gap-4">
                 <div class="grid w-full max-w-xs items-center gap-1.5">

@@ -5,10 +5,12 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Announcement;
 use App\Models\Book;
+use App\Models\Library;
 use App\Models\Loan;
 use App\Models\Member;
 use App\Models\Room;
 use App\Models\RoomBooking;
+use App\Models\Scopes\LibraryScope;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -20,6 +22,27 @@ class DashboardController extends Controller
         $user  = $request->user();
         $now   = Carbon::now();
         $today = $now->toDateString();
+        $isSuperAdmin = $user->hasRole('Super Admin');
+
+        // ── Library scoping ─────────────────────────────────────
+        // Super admin: can filter by a specific library via ?library_id=
+        // Regular staff: LibraryScope global scope handles it automatically
+        $selectedLibraryId = null;
+        $libraries = [];
+
+        if ($isSuperAdmin) {
+            $libraries = Library::where('is_active', true)->orderBy('name')->get(['id', 'name']);
+            $selectedLibraryId = $request->integer('library_id') ?: null;
+        }
+
+        // Helper: apply library filter for super admin queries (bypasses global scope)
+        $scope = function ($query) use ($isSuperAdmin, $selectedLibraryId) {
+            if ($isSuperAdmin && $selectedLibraryId) {
+                $query->withoutGlobalScope(LibraryScope::class)
+                      ->where('library_id', $selectedLibraryId);
+            }
+            return $query;
+        };
 
         $announcements = Announcement::where('is_active', true)
             ->where(function ($q) use ($now) {
@@ -30,68 +53,63 @@ class DashboardController extends Controller
             ->get();
 
         $stats = [
-            'total_books'            => Book::count(),
-            'total_members'          => Member::count(),
-            'active_loans'           => Loan::where('status', Loan::STATUS_ACTIVE)->count(),
-            'available_rooms'        => Room::where('status', 'available')->count(),
-            'total_rooms'            => Room::count(),
-            'overdue_loans'          => Loan::where('status', Loan::STATUS_OVERDUE)->count(),
-            'bookings_today'         => RoomBooking::where('booking_date', $today)
-                                            ->whereIn('status', ['confirmed', 'pending'])
-                                            ->count(),
-            'returned_this_month'    => Loan::where('status', Loan::STATUS_RETURNED)
+            'total_books'            => $scope(Book::query())->count(),
+            'total_members'          => Member::count(), // members are not library-scoped
+            'active_loans'           => $scope(Loan::where('status', Loan::STATUS_ACTIVE))->count(),
+            'available_rooms'        => $scope(Room::where('status', 'available'))->count(),
+            'total_rooms'            => $scope(Room::query())->count(),
+            'overdue_loans'          => $scope(Loan::where('status', Loan::STATUS_OVERDUE))->count(),
+            'bookings_today'         => $scope(RoomBooking::where('booking_date', $today)
+                                            ->whereIn('status', ['confirmed', 'pending']))->count(),
+            'returned_this_month'    => $scope(Loan::where('status', Loan::STATUS_RETURNED)
                                             ->whereMonth('returned_date', $now->month)
-                                            ->whereYear('returned_date', $now->year)
-                                            ->count(),
+                                            ->whereYear('returned_date', $now->year))->count(),
             'new_members_this_month' => Member::whereMonth('created_at', $now->month)
                                             ->whereYear('created_at', $now->year)
                                             ->count(),
         ];
 
         // ── Monthly trends (last 7 months) ─────────────────────
-        $months       = collect(range(6, 0))->map(fn ($i) => $now->copy()->subMonths($i));
-        $loanTrends   = $months->map(function (Carbon $m) {
+        $months     = collect(range(6, 0))->map(fn ($i) => $now->copy()->subMonths($i));
+        $loanTrends = $months->map(function (Carbon $m) use ($scope) {
             return [
                 'month'    => $m->format('M'),
-                'loans'    => Loan::whereMonth('borrowed_date', $m->month)
-                                 ->whereYear('borrowed_date', $m->year)
-                                 ->count(),
-                'returned' => Loan::where('status', Loan::STATUS_RETURNED)
+                'loans'    => $scope(Loan::whereMonth('borrowed_date', $m->month)
+                                 ->whereYear('borrowed_date', $m->year))->count(),
+                'returned' => $scope(Loan::where('status', Loan::STATUS_RETURNED)
                                  ->whereMonth('returned_date', $m->month)
-                                 ->whereYear('returned_date', $m->year)
-                                 ->count(),
+                                 ->whereYear('returned_date', $m->year))->count(),
             ];
         })->values();
 
-        $bookingTrends = $months->map(function (Carbon $m) {
-            $base = RoomBooking::whereMonth('booking_date', $m->month)->whereYear('booking_date', $m->year);
+        $bookingTrends = $months->map(function (Carbon $m) use ($scope) {
             return [
                 'month'     => $m->format('M'),
-                'bookings'  => (clone $base)->count(),
-                'confirmed' => (clone $base)->where('status', 'confirmed')->count(),
-                'cancelled' => (clone $base)->where('status', 'cancelled')->count(),
+                'bookings'  => $scope(RoomBooking::whereMonth('booking_date', $m->month)->whereYear('booking_date', $m->year))->count(),
+                'confirmed' => $scope(RoomBooking::whereMonth('booking_date', $m->month)->whereYear('booking_date', $m->year)->where('status', 'confirmed'))->count(),
+                'cancelled' => $scope(RoomBooking::whereMonth('booking_date', $m->month)->whereYear('booking_date', $m->year)->where('status', 'cancelled'))->count(),
             ];
         })->values();
 
         // ── Status breakdowns ───────────────────────────────────
         $loanBreakdown = [
-            'active'   => Loan::where('status', Loan::STATUS_ACTIVE)->count(),
-            'overdue'  => Loan::where('status', Loan::STATUS_OVERDUE)->count(),
-            'returned' => Loan::where('status', Loan::STATUS_RETURNED)->count(),
+            'active'   => $scope(Loan::where('status', Loan::STATUS_ACTIVE))->count(),
+            'overdue'  => $scope(Loan::where('status', Loan::STATUS_OVERDUE))->count(),
+            'returned' => $scope(Loan::where('status', Loan::STATUS_RETURNED))->count(),
         ];
 
         $bookingBreakdown = [
-            'confirmed' => RoomBooking::where('status', 'confirmed')->count(),
-            'pending'   => RoomBooking::where('status', 'pending')->count(),
-            'cancelled' => RoomBooking::where('status', 'cancelled')->count(),
-            'completed' => RoomBooking::where('status', 'completed')->count(),
+            'confirmed' => $scope(RoomBooking::where('status', 'confirmed'))->count(),
+            'pending'   => $scope(RoomBooking::where('status', 'pending'))->count(),
+            'cancelled' => $scope(RoomBooking::where('status', 'cancelled'))->count(),
+            'completed' => $scope(RoomBooking::where('status', 'completed'))->count(),
         ];
 
         // ── Top borrowed books (top 5) ──────────────────────────
-        $topBooks = Loan::selectRaw('book_copy_id, count(*) as loan_count')
+        $topBooks = $scope(Loan::selectRaw('book_copy_id, count(*) as loan_count')
             ->groupBy('book_copy_id')
             ->orderByDesc('loan_count')
-            ->limit(5)
+            ->limit(5))
             ->with('bookCopy.book:id,title,author')
             ->get()
             ->map(fn ($loan) => [
@@ -101,51 +119,52 @@ class DashboardController extends Controller
             ]);
 
         // ── Room utilization this month ─────────────────────────
-        $roomUtilization = Room::with(['bookings' => function ($q) use ($now) {
-            $q->whereMonth('booking_date', $now->month)
-              ->whereYear('booking_date', $now->year)
-              ->whereIn('status', ['confirmed', 'completed']);
-        }])->get()->map(function (Room $room) use ($now) {
-            $bookings  = $room->bookings->count();
-            $daysInMonth = $now->daysInMonth;
-            $utilization = min(100, (int) round(($bookings / max($daysInMonth, 1)) * 100));
-            return [
-                'name'        => $room->name,
-                'room_number' => $room->room_number,
-                'bookings'    => $bookings,
-                'utilization' => $utilization,
-            ];
-        })->sortByDesc('bookings')->values();
+        $roomUtilization = $scope(Room::query())
+            ->with(['bookings' => function ($q) use ($now) {
+                $q->whereMonth('booking_date', $now->month)
+                  ->whereYear('booking_date', $now->year)
+                  ->whereIn('status', ['confirmed', 'completed']);
+            }])->get()->map(function (Room $room) use ($now) {
+                $bookings    = $room->bookings->count();
+                $daysInMonth = $now->daysInMonth;
+                $utilization = min(100, (int) round(($bookings / max($daysInMonth, 1)) * 100));
+                return [
+                    'name'        => $room->name,
+                    'room_number' => $room->room_number,
+                    'bookings'    => $bookings,
+                    'utilization' => $utilization,
+                ];
+            })->sortByDesc('bookings')->values();
 
-        // ── Recent activity (last 30 days, top 30) ───────────────────────────
+        // ── Recent activity (last 30 days) ──────────────────────
         $thirtyDaysAgo = now()->subDays(30);
 
-        $recentLoans = Loan::with(['bookCopy.book:id,title', 'user:id,name'])
+        $recentLoans = $scope(Loan::with(['bookCopy.book:id,title', 'user:id,name'])
             ->where('created_at', '>=', $thirtyDaysAgo)
             ->latest()
-            ->limit(20)
+            ->limit(20))
             ->get()
             ->map(fn ($l) => [
                 'id'         => $l->id,
                 'type'       => 'loan',
                 'title'      => $l->bookCopy?->book?->title ?? 'Unknown Book',
                 'user'       => $l->user?->name ?? 'Unknown',
-                'created_at' => $l->created_at, // keep for sorting
+                'created_at' => $l->created_at,
                 'date'       => $l->created_at->diffForHumans(),
                 'status'     => $l->status,
             ]);
 
-        $recentBookings = RoomBooking::with(['room:id,name', 'user:id,name'])
+        $recentBookings = $scope(RoomBooking::with(['room:id,name', 'user:id,name'])
             ->where('created_at', '>=', $thirtyDaysAgo)
             ->latest()
-            ->limit(20)
+            ->limit(20))
             ->get()
             ->map(fn ($b) => [
                 'id'         => $b->id,
                 'type'       => 'room_booking',
                 'title'      => $b->room?->name ?? 'Unknown Room',
                 'user'       => $b->user?->name ?? 'Unknown',
-                'created_at' => $b->created_at, // keep for sorting
+                'created_at' => $b->created_at,
                 'date'       => $b->created_at->diffForHumans(),
                 'status'     => $b->status,
             ]);
@@ -155,7 +174,6 @@ class DashboardController extends Controller
             ->sortByDesc('created_at')
             ->take(30)
             ->map(function ($a) {
-                // remove raw created_at before sending to frontend
                 unset($a['created_at']);
                 return $a;
             })
@@ -173,6 +191,9 @@ class DashboardController extends Controller
             'top_books'                 => $topBooks,
             'room_utilization'          => $roomUtilization,
             'announcements'             => $announcements,
+            'libraries'                 => $libraries,
+            'selected_library_id'       => $selectedLibraryId,
+            'is_super_admin'            => $isSuperAdmin,
         ]);
     }
 }

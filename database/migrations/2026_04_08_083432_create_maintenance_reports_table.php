@@ -6,28 +6,27 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
-        Schema::create('maintenance_reports', function (Blueprint $blueprint) {
-            $blueprint->id();
-            $blueprint->foreignId('user_id')->constrained()->cascadeOnDelete();
-            $blueprint->string('title');
-            $blueprint->string('category'); // Building, Furniture, Books, Electronics, Others
-            $blueprint->text('description');
-            $blueprint->string('status')->default('pending'); // pending, assigned, in_progress, resolved, rejected
-            $blueprint->string('priority')->default('medium'); // low, medium, high
-            $blueprint->string('image_path')->nullable();
-            $blueprint->text('admin_notes')->nullable();
-            $blueprint->timestamps();
+        Schema::create('maintenance_reports', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('library_id')->nullable()->constrained()->nullOnDelete();
+            $table->string('title');
+            $table->string('category');
+            $table->text('description');
+            $table->string('status')->default('pending');
+            $table->string('priority')->default('medium');
+            $table->string('image_path')->nullable();
+            $table->text('admin_notes')->nullable();
+            $table->timestamps();
+
+            $table->index('library_id');
+            $table->index('status');
+            $table->index('priority');
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('maintenance_reports');

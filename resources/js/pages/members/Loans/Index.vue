@@ -1,42 +1,22 @@
 <script setup lang="ts">
 import { Head, Link, router } from '@inertiajs/vue3';
-import { ref, watch, computed } from 'vue';
+import { ref, watch } from 'vue';
 import { debounce } from 'lodash';
 import AppLayout from '@/layouts/AppLayout.vue';
 import FlashAlert from '@/components/FlashAlert.vue';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { 
-    Search, 
-    BookOpen, 
-    Calendar, 
-    Clock, 
-    CheckCircle2, 
-    AlertCircle, 
-    History,
-    ArrowRight,
-    Library
-} from 'lucide-vue-next';
+import { Search, BookOpen, Calendar, Clock, CheckCircle2, AlertCircle, History, ArrowRight, Library, RefreshCw, X } from 'lucide-vue-next';
 import { route } from 'ziggy-js';
 
 const props = defineProps<{
-    loans: {
-        data: any[];
-        links: any[];
-        total: number;
-    };
-    filters: {
-        book_search?: string;
-        status?: string;
-    };
+    loans: { data: any[]; links: any[]; total: number };
+    filters: { book_search?: string; status?: string };
     statuses: Record<string, string>;
+    max_renewals: number;
 }>();
 
-const breadcrumbs = [
-    { title: 'My Loans', href: route('member.loans.index') },
-];
+const breadcrumbs = [{ title: 'My Loans', href: route('member.loans.index') }];
 
 const bookSearch = ref(props.filters.book_search || '');
 const activeTab = ref(props.filters.status || 'all');
@@ -45,290 +25,223 @@ const updateFilters = debounce(() => {
     const params: any = {};
     if (bookSearch.value) params.book_search = bookSearch.value;
     if (activeTab.value !== 'all') params.status = activeTab.value;
-
-    router.get(route('member.loans.index'), params, {
-        preserveState: true,
-        preserveScroll: true,
-        replace: true,
-    });
+    router.get(route('member.loans.index'), params, { preserveState: true, preserveScroll: true, replace: true });
 }, 300);
 
-watch([bookSearch, activeTab], () => {
-    updateFilters();
-});
+watch([bookSearch, activeTab], updateFilters);
 
-const formatDate = (date: string | null): string => {
-    if (!date) return 'N/A';
-    return new Date(date).toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-    });
-};
+const formatDate = (date: string | null) =>
+    date ? new Date(date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : 'N/A';
 
 const getLoanProgress = (borrowedDate: string, dueDate: string, returnedDate: string | null) => {
     if (returnedDate) return 100;
-    
     const start = new Date(borrowedDate).getTime();
     const end = new Date(dueDate).getTime();
     const now = new Date().getTime();
-    
     if (now >= end) return 100;
-    
-    const total = end - start;
-    const elapsed = now - start;
-    
-    return Math.max(0, Math.min(100, (elapsed / total) * 100));
+    return Math.max(0, Math.min(100, ((now - start) / (end - start)) * 100));
 };
 
 const getStatusConfig = (loan: any) => {
-    if (loan.returned_date) {
-        return {
-            label: 'Returned',
-            icon: CheckCircle2,
-            variant: 'secondary' as const,
-            bgColor: 'bg-slate-100 text-slate-600',
-            progressColor: 'bg-slate-400'
-        };
-    }
-    
+    if (loan.returned_date) return { label: 'Returned', progressColor: 'bg-muted-foreground', timeColor: '' };
     const isOverdue = new Date(loan.due_date) < new Date();
-    if (isOverdue) {
-        return {
-            label: 'Overdue',
-            icon: AlertCircle,
-            variant: 'destructive' as const,
-            bgColor: 'bg-red-50 text-red-600 border-red-100',
-            progressColor: 'bg-red-500'
-        };
-    }
-    
-    return {
-        label: 'Active',
-        icon: Clock,
-        variant: 'default' as const,
-        bgColor: 'bg-emerald-50 text-emerald-600 border-emerald-100',
-        progressColor: 'bg-emerald-500'
-    };
+    if (isOverdue) return { label: 'Overdue', progressColor: 'bg-destructive', timeColor: 'text-destructive' };
+    return { label: 'Active', progressColor: 'bg-emerald-500', timeColor: 'text-[color:var(--leather)]' };
 };
 
 const getTimeRemaining = (dueDate: string, returnedDate: string | null) => {
     if (returnedDate) return null;
-    
-    const now = new Date();
-    const due = new Date(dueDate);
-    const diffTime = due.getTime() - now.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
+    const diffDays = Math.ceil((new Date(dueDate).getTime() - Date.now()) / 86400000);
     if (diffDays < 0) return `${Math.abs(diffDays)} days overdue`;
     if (diffDays === 0) return 'Due today';
-    if (diffDays === 1) return '1 day left';
-    return `${diffDays} days left`;
+    return `${diffDays} day${diffDays === 1 ? '' : 's'} left`;
 };
 
+const renewLoan = (loanId: number) => {
+    if (!confirm('Renew this loan for another 14 days?')) return;
+    router.post(route('member.loans.renew', loanId), {}, { preserveScroll: true });
+};
+
+const tabs = [
+    { key: 'all', label: 'All', icon: null },
+    { key: 'active', label: 'Active', icon: Clock },
+    { key: 'overdue', label: 'Overdue', icon: AlertCircle },
+    { key: 'returned', label: 'Returned', icon: History },
+];
 </script>
 
 <template>
     <Head title="My Loans" />
-
     <AppLayout :breadcrumbs="breadcrumbs">
-        <div class="space-y-8">
-            <FlashAlert />
+        <div class="space-y-0">
+            <FlashAlert class="mb-4" />
 
-            <!-- Header Section -->
-            <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-2">
-                <div class="space-y-1">
-                    <h1 class="text-3xl font-black tracking-tight text-slate-900">My Borrowing <span class="text-indigo-600 text-6xl leading-none">.</span></h1>
-                    <p class="text-slate-500 font-medium">Manage your active loans and track your reading history.</p>
-                </div>
+            <!-- Hero -->
+            <section class="border-b border-border bg-[image:var(--gradient-warm)] -mx-4 px-4 sm:-mx-6 sm:px-6 py-6">
+                <p class="text-[11px] uppercase tracking-[0.22em] text-muted-foreground">Member portal</p>
+                <h1 class="mt-3 font-serif text-3xl lg:text-4xl leading-[1.05]">
+                    My Borrowing History
+                </h1>
+                <p class="mt-3 max-w-lg text-sm text-muted-foreground leading-relaxed">
+                    Track your active loans, due dates, and reading history.
+                </p>
 
-                <div class="flex items-center gap-2 w-full md:w-auto">
-                    <div class="relative w-full md:w-64 group">
-                        <Search class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
-                        <Input 
-                            v-model="bookSearch" 
-                            placeholder="Find a book..." 
-                            class="pl-9 h-10 border-slate-200 bg-white focus-visible:ring-indigo-500 rounded-xl shadow-sm w-full"
-                        />
-                    </div>
-                </div>
-            </div>
+                <label class="mt-6 flex items-center gap-3 rounded-full border border-border bg-card px-5 py-3.5 max-w-2xl">
+                    <Search class="h-4 w-4 text-muted-foreground shrink-0" />
+                    <input
+                        v-model="bookSearch"
+                        placeholder="Search by book title…"
+                        class="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+                    />
+                    <button v-if="bookSearch" @click="bookSearch = ''" class="shrink-0 text-muted-foreground hover:text-foreground transition">
+                        <X class="h-3.5 w-3.5" />
+                    </button>
+                </label>
+            </section>
 
-            <!-- Stats & Filters -->
-            <div class="flex flex-wrap items-center gap-3">
-                <Button 
-                    @click="activeTab = 'all'"
-                    variant="ghost"
-                    class="rounded-xl px-6 h-10 font-bold transition-all"
-                    :class="activeTab === 'all' ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-md shadow-indigo-100' : 'bg-white border text-slate-600 hover:bg-slate-50'"
-                >
-                    All History
-                </Button>
-                <Button 
-                    @click="activeTab = 'active'"x
-                    variant="ghost"
-                    class="rounded-xl px-6 h-10 font-bold transition-all"
-                    :class="activeTab === 'active' ? 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-md shadow-emerald-100' : 'bg-white border text-slate-600 hover:bg-slate-50'"
-                >
-                    <Clock class="h-4 w-4 mr-2" />
-                    Active
-                </Button>
-                <Button 
-                    @click="activeTab = 'overdue'"
-                    variant="ghost"
-                    class="rounded-xl px-6 h-10 font-bold transition-all"
-                    :class="activeTab === 'overdue' ? 'bg-red-500 text-white hover:bg-red-600 shadow-md shadow-red-100' : 'bg-white border text-slate-600 hover:bg-slate-50'"
-                >
-                    <AlertCircle class="h-4 w-4 mr-2" />
-                    Overdue
-                </Button>
-                <Button 
-                    @click="activeTab = 'returned'"
-                    variant="ghost"
-                    class="rounded-xl px-6 h-10 font-bold transition-all"
-                    :class="activeTab === 'returned' ? 'bg-amber-600 text-white hover:bg-amber-700 shadow-md shadow-amber-100' : 'bg-white border text-slate-600 hover:bg-slate-50'"
-                >
-                    <History class="h-4 w-4 mr-2" />
-                    Returned
-                </Button>
-            </div>
-
-            <!-- Cards Grid -->
-            <div v-if="loans.data.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 gap-4">
-                <Card v-for="loan in loans.data" :key="loan.id" class="group border-slate-200 overflow-hidden hover:border-indigo-200 transition-all duration-300 shadow-sm hover:shadow-md rounded-2xl">
-                    <CardContent class="p-0">
-                        <div class="flex flex-col lg:flex-row">
-                            <!-- Book Visual Info -->
-                            <div class="w-full lg:w-48 bg-slate-50 flex flex-col items-center justify-center p-6 border-b lg:border-b-0 lg:border-r border-slate-100 group-hover:bg-indigo-50/30 transition-colors">
-                                <div class="bg-white p-3 rounded-xl shadow-sm border border-slate-100 mb-3 group-hover:scale-110 transition-transform duration-500">
-                                    <BookOpen class="h-8 w-8 text-indigo-500" />
-                                </div>
-                                <div class="text-[10px] font-bold uppercase tracking-widest text-slate-400 text-center">
-                                    {{ loan.book_copy.barcode }}
-                                </div>
-                            </div>
-
-                            <!-- Main Content -->
-                            <div class="flex-1 p-6 space-y-6">
-                                <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                                    <div class="space-y-1">
-                                        <div class="flex items-center gap-2">
-                                            <Badge variant="outline" :class="getStatusConfig(loan).bgColor" class="px-2 py-0 h-5 text-[10px] uppercase font-bold tracking-wider rounded-md border-0">
-                                                {{ getStatusConfig(loan).label }}
-                                            </Badge>
-                                            <span v-if="!loan.returned_date" class="text-xs font-bold" :class="new Date(loan.due_date) < new Date() ? 'text-red-500' : 'text-indigo-600'">
-                                                {{ getTimeRemaining(loan.due_date, loan.returned_date) }}
-                                            </span>
-                                        </div>
-                                        <h3 class="text-xl font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">
-                                            {{ loan.book_copy.book.title }}
-                                        </h3>
-                                        <p class="text-sm text-slate-500 font-medium">by {{ loan.book_copy.book.author_name }}</p>
-                                    </div>
-
-                                    <div class="flex flex-wrap items-center gap-x-6 gap-y-3 text-sm">
-                                        <div class="space-y-1">
-                                            <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Borrowed</span>
-                                            <span class="font-bold text-slate-700 flex items-center gap-1.5 whitespace-nowrap">
-                                                <Calendar class="h-3.5 w-3.5 text-slate-300" />
-                                                {{ formatDate(loan.borrowed_date) }}
-                                            </span>
-                                        </div>
-                                        <div class="space-y-1">
-                                            <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Due Date</span>
-                                            <span class="font-bold text-slate-700 flex items-center gap-1.5 whitespace-nowrap">
-                                                <Calendar class="h-3.5 w-3.5 text-slate-300" />
-                                                {{ formatDate(loan.due_date) }}
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Progress representation -->
-                                <div v-if="!loan.returned_date" class="space-y-2 pt-2">
-                                    <div class="flex justify-between text-[10px] font-bold uppercase tracking-wider">
-                                        <span class="text-slate-400">Borrow Progress</span>
-                                        <span :class="new Date(loan.due_date) < new Date() ? 'text-red-500' : 'text-indigo-500'">
-                                            {{ Math.round(getLoanProgress(loan.borrowed_date, loan.due_date, loan.returned_date)) }}% Elapsed
-                                        </span>
-                                    </div>
-                                    <div class="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
-                                        <div 
-                                            class="h-full transition-all duration-1000 ease-out"
-                                            :class="getStatusConfig(loan).progressColor"
-                                            :style="{ width: `${getLoanProgress(loan.borrowed_date, loan.due_date, loan.returned_date)}%` }"
-                                        ></div>
-                                    </div>
-                                </div>
-
-                                <div v-else class="flex items-center gap-2 p-3 bg-slate-50 rounded-xl border border-slate-100">
-                                    <CheckCircle2 class="h-4 w-4 text-emerald-500" />
-                                    <span class="text-xs font-bold text-slate-600">
-                                        Returned on {{ formatDate(loan.returned_date) }}
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
-            </div>
-
-            <!-- Empty State -->
-            <div v-else class="py-24 text-center space-y-6 bg-slate-50/50 rounded-3xl border-2 border-dashed border-slate-200">
-                <div class="bg-white p-6 rounded-full w-24 h-24 mx-auto shadow-sm flex items-center justify-center border border-slate-100">
-                    <Library class="h-10 w-10 text-slate-300" />
-                </div>
-                <div class="space-y-2">
-                    <h3 class="text-2xl font-black text-slate-900">No loans found</h3>
-                    <p class="text-slate-500 font-medium max-w-sm mx-auto">
-                        {{ bookSearch ? `We couldn't find any books matching "${bookSearch}".` : "You haven't borrowed any books yet. Check out our catalog to get started!" }}
+            <!-- Filter rail -->
+            <div class="sticky top-0 z-20 border-b border-border bg-background/90 backdrop-blur -mx-4 px-4 sm:-mx-6 sm:px-6 py-3">
+                <div class="flex items-center gap-2 overflow-x-auto">
+                    <button
+                        v-for="tab in tabs"
+                        :key="tab.key"
+                        @click="activeTab = tab.key"
+                        class="shrink-0 flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-medium transition border"
+                        :class="activeTab === tab.key
+                            ? 'bg-primary text-primary-foreground border-primary'
+                            : 'bg-card text-muted-foreground border-border hover:text-foreground'"
+                    >
+                        <component :is="tab.icon" v-if="tab.icon" class="h-3.5 w-3.5" />
+                        {{ tab.label }}
+                    </button>
+                    <p class="ml-auto text-xs text-muted-foreground font-medium whitespace-nowrap shrink-0">
+                        <span class="font-bold text-foreground">{{ loans.total }}</span> records
                     </p>
                 </div>
-                <div v-if="bookSearch">
-                    <Button variant="outline" @click="bookSearch = ''; activeTab = 'all'" class="rounded-xl px-8 font-bold">
-                        Clear Search
+            </div>
+
+            <!-- Shelf heading -->
+            <div class="flex items-end justify-between gap-4 pt-8 pb-4">
+                <h2 class="font-serif text-2xl">{{ activeTab === 'all' ? 'All loans' : tabs.find(t => t.key === activeTab)?.label }}</h2>
+            </div>
+
+            <!-- Loan cards -->
+            <div v-if="loans.data.length > 0" class="flex flex-col gap-4">
+                <article
+                    v-for="loan in loans.data"
+                    :key="loan.id"
+                    class="group relative border border-border rounded-xl overflow-hidden transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[var(--shadow-book)] bg-card"
+                >
+                    <!-- Spine accent -->
+                    <span class="absolute left-0 top-0 h-full w-1.5" :style="{ background: loan.returned_date ? 'var(--dust)' : new Date(loan.due_date) < new Date() ? 'oklch(0.55 0.18 25)' : 'var(--sage)' }" />
+
+                    <div class="flex flex-col lg:flex-row pl-2">
+                        <!-- Icon panel -->
+                        <div class="w-full lg:w-40 bg-secondary/40 flex flex-col items-center justify-center p-6 border-b lg:border-b-0 lg:border-r border-border">
+                            <div class="bg-card p-3 rounded-xl border border-border mb-2 group-hover:scale-110 transition-transform duration-500">
+                                <BookOpen class="h-7 w-7" style="color: var(--brass)" />
+                            </div>
+                            <p class="text-[10px] font-mono text-muted-foreground text-center truncate max-w-full px-2">{{ loan.book_copy.barcode }}</p>
+                        </div>
+
+                        <!-- Content -->
+                        <div class="flex-1 p-6 space-y-4">
+                            <div class="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
+                                <div class="space-y-1">
+                                    <div class="flex items-center gap-2 flex-wrap">
+                                        <span class="rounded-full px-2.5 py-0.5 text-[11px] font-bold border"
+                                            :class="loan.returned_date ? 'bg-secondary text-muted-foreground border-border' : new Date(loan.due_date) < new Date() ? 'bg-destructive/10 text-destructive border-destructive/25' : 'bg-primary/10 text-primary border-primary/25'">
+                                            {{ getStatusConfig(loan).label }}
+                                        </span>
+                                        <span v-if="!loan.returned_date" class="text-xs font-bold" :class="getStatusConfig(loan).timeColor">
+                                            {{ getTimeRemaining(loan.due_date, loan.returned_date) }}
+                                        </span>
+                                    </div>
+                                    <h3 class="font-serif text-xl leading-tight group-hover:text-[color:var(--leather)] transition-colors">
+                                        {{ loan.book_copy.book.title }}
+                                    </h3>
+                                    <p class="text-sm text-muted-foreground">by {{ loan.book_copy.book.author_name }}</p>
+                                </div>
+
+                                <div class="flex flex-wrap gap-x-6 gap-y-3 text-sm shrink-0">
+                                    <div class="space-y-0.5">
+                                        <span class="block text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Borrowed</span>
+                                        <span class="font-bold flex items-center gap-1.5 whitespace-nowrap">
+                                            <Calendar class="h-3.5 w-3.5 text-muted-foreground" /> {{ formatDate(loan.borrowed_date) }}
+                                        </span>
+                                    </div>
+                                    <div class="space-y-0.5">
+                                        <span class="block text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Due Date</span>
+                                        <span class="font-bold flex items-center gap-1.5 whitespace-nowrap">
+                                            <Calendar class="h-3.5 w-3.5 text-muted-foreground" /> {{ formatDate(loan.due_date) }}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Progress bar -->
+                            <div v-if="!loan.returned_date" class="space-y-1.5">
+                                <div class="flex justify-between text-[10px] font-bold uppercase tracking-wider">
+                                    <span class="text-muted-foreground">Borrow progress</span>
+                                    <span :class="getStatusConfig(loan).timeColor">{{ Math.round(getLoanProgress(loan.borrowed_date, loan.due_date, loan.returned_date)) }}% elapsed</span>
+                                </div>
+                                <div class="h-1.5 w-full bg-secondary rounded-full overflow-hidden">
+                                    <div class="h-full transition-all duration-1000 ease-out rounded-full" :class="getStatusConfig(loan).progressColor"
+                                        :style="{ width: `${getLoanProgress(loan.borrowed_date, loan.due_date, loan.returned_date)}%` }" />
+                                </div>
+                                <div class="flex items-center justify-between pt-1">
+                                    <span class="text-[10px] text-muted-foreground">Renewals: {{ loan.renewals_count ?? 0 }} / {{ max_renewals }}</span>
+                                    <Button v-if="(loan.renewals_count ?? 0) < max_renewals" size="sm" variant="outline"
+                                        class="h-7 px-3 rounded-full text-xs font-bold" style="border-color: var(--brass); color: var(--leather);"
+                                        @click="renewLoan(loan.id)">
+                                        <RefreshCw class="h-3 w-3 mr-1" /> Renew
+                                    </Button>
+                                    <span v-else class="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Max renewals reached</span>
+                                </div>
+                            </div>
+
+                            <div v-else class="flex items-center gap-2 p-3 bg-secondary/40 rounded-lg border border-border">
+                                <CheckCircle2 class="h-4 w-4 text-emerald-500" />
+                                <span class="text-xs font-bold text-muted-foreground">Returned on {{ formatDate(loan.returned_date) }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+            </div>
+
+            <!-- Empty state -->
+            <div v-else class="py-24 text-center space-y-4 rounded-xl border border-dashed border-border bg-card">
+                <div class="bg-secondary p-4 rounded-full w-20 h-20 mx-auto flex items-center justify-center border border-border">
+                    <Library class="h-10 w-10 text-muted-foreground" />
+                </div>
+                <div class="space-y-1">
+                    <h3 class="font-serif text-xl">No loans found</h3>
+                    <p class="text-sm text-muted-foreground">{{ bookSearch ? `No results for "${bookSearch}".` : "You haven't borrowed any books yet." }}</p>
+                </div>
+                <Link v-if="!bookSearch" :href="route('member.catalog.index')">
+                    <Button class="rounded-full px-8 font-bold" style="background: var(--ink); color: var(--dust);">
+                        Browse Catalog <ArrowRight class="ml-2 h-4 w-4" />
                     </Button>
-                </div>
-                <div v-else>
-                    <Link :href="route('member.catalog.index')">
-                        <Button class="bg-indigo-600 hover:bg-indigo-700 rounded-xl px-10 font-bold shadow-lg shadow-indigo-200/50">
-                            Browse Catalog
-                            <ArrowRight class="ml-2 h-4 w-4" />
-                        </Button>
-                    </Link>
-                </div>
+                </Link>
+                <Button v-else variant="outline" @click="bookSearch = ''" class="rounded-full px-6">Clear search</Button>
+            </div>
+
+            <!-- Quote -->
+            <div class="mt-12 rounded-xl border border-border bg-card p-6 text-center">
+                <p class="font-serif italic text-lg">"A reader lives a thousand lives before he dies."</p>
+                <p class="mt-2 text-[11px] uppercase tracking-[0.2em] text-muted-foreground">George R.R. Martin</p>
             </div>
 
             <!-- Pagination -->
-            <div v-if="loans.data.length > 0 && loans.links.length > 3" class="pt-10 border-t border-slate-100">
-                <div class="flex flex-col md:flex-row items-center justify-between gap-6">
-                    <p class="text-sm font-medium text-slate-500">
-                        Total Records: <span class="text-slate-900 font-bold">{{ loans.total }}</span>
-                    </p>
-                    <div class="flex items-center gap-1.5">
-                        <Link 
-                            v-for="link in loans.links" 
-                            :key="link.label"
-                            :href="link.url || '#'"
-                            class="h-10 min-w-10 flex items-center justify-center rounded-xl px-4 text-sm font-bold transition-all"
-                            :class="[
-                                link.active ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-100' : 'bg-white border border-slate-200 text-slate-600 hover:border-indigo-500 hover:text-indigo-600',
-                                !link.url && 'opacity-40 cursor-not-allowed pointer-events-none'
-                            ]"
-                            v-html="link.label"
-                        />
-                    </div>
+            <div v-if="loans.data.length > 0 && loans.links.length > 3" class="flex flex-col md:flex-row items-center justify-between gap-4 pt-8 border-t border-border">
+                <p class="text-sm text-muted-foreground">Total: <span class="font-bold text-foreground">{{ loans.total }}</span></p>
+                <div class="flex items-center gap-1.5">
+                    <Link v-for="link in loans.links" :key="link.label" :href="link.url || '#'"
+                        class="h-9 min-w-9 flex items-center justify-center rounded-full px-3.5 text-sm font-bold transition-all border"
+                        :class="[link.active ? 'bg-primary text-primary-foreground border-primary' : 'bg-card border-border text-muted-foreground hover:border-[color:var(--brass)] hover:text-[color:var(--leather)]', !link.url && 'opacity-40 cursor-not-allowed pointer-events-none']"
+                        v-html="link.label" />
                 </div>
             </div>
         </div>
     </AppLayout>
 </template>
-
-<style scoped>
-.line-clamp-1 {
-    display: -webkit-box;
-    -webkit-line-clamp: 1;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-}
-</style>

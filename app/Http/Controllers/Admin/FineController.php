@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 
+use App\Models\Library;
 use App\Models\Loan;
+use App\Models\Scopes\LibraryScope;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -12,11 +14,24 @@ class FineController extends Controller
 {
     public function index(Request $request)
     {
+        $user = $request->user();
+        $isSuperAdmin = $user->hasRole('Super Admin');
+        $libraries = [];
+        $selectedLibraryId = null;
+
+        if ($isSuperAdmin) {
+            $libraries = Library::where('is_active', true)->orderBy('name')->get(['id', 'name']);
+            $selectedLibraryId = $request->integer('library_id') ?: null;
+        }
+
         $search = $request->input('search');
 
         $query = Loan::with(['bookCopy.book', 'user'])
             ->whereNotNull('fine_amount')
-            ->where('fine_amount', '>', 0);
+            ->where('fine_amount', '>', 0)
+            ->when($isSuperAdmin && $selectedLibraryId, fn ($q) =>
+                $q->withoutGlobalScope(LibraryScope::class)->where('library_id', $selectedLibraryId)
+            );
 
         if ($search) {
             $query->whereHas('user', function ($q) use ($search) {
@@ -40,10 +55,11 @@ class FineController extends Controller
         });
 
         return Inertia::render('admins/Fines/Index', [
-            'fines' => $fines,
-            'filters' => [
-                'search' => $search,
-            ],
+            'fines'               => $fines,
+            'filters'             => ['search' => $search],
+            'libraries'           => $libraries,
+            'selected_library_id' => $selectedLibraryId,
+            'is_super_admin'      => $isSuperAdmin,
         ]);
     }
 

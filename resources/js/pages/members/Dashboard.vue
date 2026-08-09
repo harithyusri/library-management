@@ -109,13 +109,13 @@ const stripHtml = (html: string) => {
             <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-2">
                 <div class="space-y-1">
                     <h1 class="text-2xl md:text-3xl font-black tracking-tight text-slate-900 leading-tight">
-                        {{ greeting }}, {{ user.name }} <span class="text-indigo-600 text-5xl md:text-6xl leading-none">.</span>
+                        {{ greeting }}, {{ user.name }} <span class="text-[#c5a059] text-5xl md:text-6xl leading-none">.</span>
                     </h1>
                     <p class="text-slate-500 font-medium text-sm md:text-base">Welcome back to your library dashboard.</p>
                 </div>
                 <div class="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
                     <Link href="/member/catalog" class="w-full sm:w-auto">
-                        <Button class="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl px-6 h-11 font-bold shadow-lg shadow-indigo-100 dark:shadow-none items-center gap-2">
+                        <Button class="w-full sm:w-auto bg-[#0d1a14] hover:bg-[#122010] text-[#f1f5f9] rounded-xl px-6 h-11 font-bold flex items-center gap-2">
                             <BookOpen class="h-5 w-5" />
                             Browse Catalog
                         </Button>
@@ -133,18 +133,18 @@ const stripHtml = (html: string) => {
             <div v-if="announcements && announcements.length > 0" class="relative group">
                 <div class="flex items-center justify-between mb-4">
                     <div class="flex items-center gap-2">
-                         <div class="h-8 w-1 bg-indigo-600 rounded-full"></div>
+                         <div class="h-8 w-1 bg-[#c5a059] rounded-full"></div>
                         <h2 class="text-xl font-black tracking-tight text-slate-900">Latest Announcements</h2>
                     </div>
                     <Link href="/member/announcements">
-                        <Button variant="link" size="sm" class="gap-1.5 font-bold text-indigo-600 hover:text-indigo-800 p-0">
+                        <Button variant="link" size="sm" class="gap-1.5 font-bold text-[#c5a059] hover:text-[#b8924a] p-0">
                             View All <ArrowRight class="h-4 w-4" />
                         </Button>
                     </Link>
                 </div>
 
                 <!-- Slider Container -->
-                <div class="relative overflow-hidden rounded-3xl md:rounded-[2rem] bg-slate-900 shadow-2xl shadow-indigo-200/50">
+                <div class="relative overflow-hidden rounded-3xl md:rounded-[2rem] bg-slate-900 shadow-2xl shadow-black/20">
                     <div 
                         class="flex transition-transform duration-1000 cubic-bezier(0.4, 0, 0.2, 1)"
                         :style="{ transform: `translateX(-${activeSlide * 100}%)` }"
@@ -161,7 +161,7 @@ const stripHtml = (html: string) => {
                                     :src="`/storage/${announcement.image_path}`" 
                                     class="h-full w-full object-cover opacity-60 scale-105 group-hover:scale-110 transition-transform duration-1000" 
                                 />
-                                <div v-else class="h-full w-full bg-gradient-to-br from-indigo-900 via-slate-900 to-indigo-950 opacity-100"></div>
+                                <div v-else class="h-full w-full bg-gradient-to-br from-[#0d1a14] via-slate-900 to-[#0a1510] opacity-100"></div>
                                 <div class="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/80 to-transparent"></div>
                                 <div class="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-transparent to-transparent md:hidden"></div>
                             </div>
@@ -169,7 +169,7 @@ const stripHtml = (html: string) => {
                             <!-- Content -->
                             <div class="relative h-full flex flex-col justify-end md:justify-center px-6 md:px-16 pb-12 md:pb-0 max-w-2xl space-y-3 md:space-y-4">
                                 <div class="flex items-center gap-2 md:gap-3">
-                                    <Badge class="bg-indigo-500 hover:bg-indigo-600 border-0 text-[9px] md:text-[10px] font-black uppercase tracking-widest px-2 md:px-3 py-0.5 md:py-1">Important</Badge>
+                                    <Badge class="bg-[#c5a059] hover:bg-[#b8924a] border-0 text-[9px] md:text-[10px] font-black uppercase tracking-widest px-2 md:px-3 py-0.5 md:py-1 text-[#0d1a14]">Important</Badge>
                                     <span class="text-[10px] md:text-xs font-bold text-slate-400 font-mono">{{ new Date(announcement.created_at).toLocaleDateString('en-MY', { day: '2-digit', month: 'short', year: 'numeric' }) }}</span>
                                 </div>
                                 <h3 class="text-xl md:text-4xl font-black text-white leading-tight tracking-tight line-clamp-3 md:line-clamp-2">
@@ -180,7 +180,7 @@ const stripHtml = (html: string) => {
                                 </p>
                                 <div class="pt-2 md:pt-4">
                                      <Link :href="`/member/announcements/${announcement.id}`">
-                                        <Button class="bg-white hover:bg-indigo-50 text-slate-900 rounded-xl px-6 md:px-8 h-10 md:h-12 text-sm md:text-base font-black transition-all active:scale-95">
+                                        <Button class="bg-white hover:bg-[#c5a059]/10 text-slate-900 rounded-xl px-6 md:px-8 h-10 md:h-12 text-sm md:text-base font-black transition-all active:scale-95">
                                             Read More
                                         </Button>
                                     </Link>
@@ -221,14 +221,14 @@ const stripHtml = (html: string) => {
             <!-- ── Personal Stats ──────────────────────────────── -->
             <div class="grid gap-4 grid-cols-2 lg:grid-cols-5">
                 <Card class="relative overflow-hidden transition-shadow hover:shadow-md">
-                    <div class="absolute inset-0 bg-gradient-to-br from-blue-50 to-transparent dark:from-blue-950/20 opacity-60 pointer-events-none" />
+                    <div class="absolute inset-0 bg-gradient-to-br from-[#c5a059]/5 to-transparent opacity-60 pointer-events-none" />
                     <CardContent class="pt-5 pb-4 px-5 text-center sm:text-left">
-                        <div class="rounded-lg bg-blue-100 dark:bg-blue-900/40 p-2 mb-3 w-fit mx-auto sm:mx-0">
-                            <Clock class="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                        <div class="rounded-lg bg-[#c5a059]/10 p-2 mb-3 w-fit mx-auto sm:mx-0">
+                            <Clock class="h-4 w-4 text-[#c5a059]" />
                         </div>
                         <div class="text-2xl font-bold tabular-nums">{{ (stats.active_loans as number ?? 0).toLocaleString() }}</div>
                         <p class="text-xs text-muted-foreground mt-0.5 font-medium">Active Loans</p>
-                        <p v-if="nextDueDate" class="text-xs text-blue-600 dark:text-blue-400 mt-1.5 font-bold">Due: {{ nextDueDate }}</p>
+                        <p v-if="nextDueDate" class="text-xs text-[#c5a059] mt-1.5 font-bold">Due: {{ nextDueDate }}</p>
                     </CardContent>
                 </Card>
 
@@ -266,10 +266,10 @@ const stripHtml = (html: string) => {
                 </Card>
 
                 <Card class="relative overflow-hidden transition-shadow hover:shadow-md">
-                    <div class="absolute inset-0 bg-gradient-to-br from-indigo-50 to-transparent dark:from-indigo-950/20 opacity-60 pointer-events-none" />
+                    <div class="absolute inset-0 bg-gradient-to-br from-[#0d1a14]/5 to-transparent opacity-60 pointer-events-none" />
                     <CardContent class="pt-5 pb-4 px-5 text-center sm:text-left">
-                        <div class="rounded-lg bg-indigo-100 dark:bg-indigo-900/40 p-2 mb-3 w-fit mx-auto sm:mx-0">
-                            <DoorOpen class="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+                        <div class="rounded-lg bg-[#0d1a14]/10 p-2 mb-3 w-fit mx-auto sm:mx-0">
+                            <DoorOpen class="h-4 w-4 text-[#0d1a14]" />
                         </div>
                         <div class="text-2xl font-bold tabular-nums">{{ (stats.available_rooms as number ?? 0).toLocaleString() }}</div>
                         <p class="text-xs text-muted-foreground mt-0.5 font-medium">Available Rooms</p>
@@ -287,7 +287,7 @@ const stripHtml = (html: string) => {
                                 <CardDescription class="mt-1">Tracking your loans and bookings.</CardDescription>
                             </div>
                             <Link href="/member/loans">
-                                <Button variant="ghost" size="sm" class="gap-1.5 font-bold text-blue-600 hover:bg-blue-50">View All Records <ArrowRight class="h-4 w-4" /></Button>
+                                <Button variant="ghost" size="sm" class="gap-1.5 font-bold text-[#c5a059] hover:bg-[#c5a059]/10">View All Records <ArrowRight class="h-4 w-4" /></Button>
                             </Link>
                         </div>
                     </CardHeader>
@@ -300,12 +300,12 @@ const stripHtml = (html: string) => {
                             <Card v-for="activity in recent_activities" :key="`${activity.type}-${activity.id}`" class="overflow-hidden group hover:shadow-md transition-all duration-300">
                                 <CardContent class="p-4 flex gap-4">
                                     <div class="shrink-0 flex h-10 w-10 items-center justify-center rounded-xl"
-                                        :class="activity.type === 'loan' ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600' : 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600'">
+                                        :class="activity.type === 'loan' ? 'bg-[#0d1a14]/10 text-[#0d1a14]' : 'bg-[#c5a059]/10 text-[#c5a059]'">
                                         <BookOpen v-if="activity.type === 'loan'" class="h-5 w-5" />
                                         <Calendar v-else class="h-5 w-5" />
                                     </div>
                                     <div class="flex-1 min-w-0 flex flex-col justify-center">
-                                        <p class="text-sm font-bold truncate group-hover:text-blue-600 transition-colors">{{ activity.title }}</p>
+                                        <p class="text-sm font-bold truncate group-hover:text-[#c5a059] transition-colors">{{ activity.title }}</p>
                                         <p class="text-[11px] text-muted-foreground font-medium mt-1">{{ activity.date }} · <span class="capitalize">{{ activity.type.replace('_', ' ') }}</span></p>
                                     </div>
                                     <div class="flex items-center">

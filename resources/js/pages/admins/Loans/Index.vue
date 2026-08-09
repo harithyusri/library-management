@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { route } from "ziggy-js";
-import { reactive } from 'vue';
+import { reactive, ref } from 'vue';
+import PageHeader from '@/components/PageHeader.vue';
 import { Link, router } from '@inertiajs/vue3';
 import { type BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/vue3';
@@ -72,6 +73,9 @@ const props = defineProps<{
     loans: PaginatedLoans;
     filters: Record<string, any>;
     statuses: Record<string, string>;
+    libraries: Array<{ id: number; name: string }>;
+    selected_library_id: number | null;
+    is_super_admin: boolean;
 }>();
 
 /* =========================
@@ -83,7 +87,10 @@ const searchForm = reactive({
     status: props.filters?.status ?? 'all',
     sort_by: props.filters?.sort_by ?? 'borrowed_date',
     sort_order: props.filters?.sort_order ?? 'desc',
+    library_id: props.selected_library_id ? String(props.selected_library_id) : 'all',
 });
+
+const selectedLibrary = ref(props.selected_library_id ? String(props.selected_library_id) : 'all');
 
 let searchTimeout: ReturnType<typeof setTimeout> | null = null;
 
@@ -98,7 +105,10 @@ const debounceSearch = () => {
 };
 
 const search = () => {
-    router.get(route('admin.loans.index'), searchForm, {
+    router.get(route('admin.loans.index'), {
+        ...searchForm,
+        library_id: searchForm.library_id !== 'all' ? searchForm.library_id : null,
+    }, {
         preserveScroll: true,
         preserveState: true,
     });
@@ -165,22 +175,24 @@ const getDaysUntilDue = (dueDate: string, returnedDate: string | null | undefine
         <div class="space-y-6">
             <FlashAlert />
 
-            <!-- Header Section -->
-            <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-2 border-b border-slate-100">
-                <div class="space-y-1">
-                    <h1 class="text-3xl font-black tracking-tight text-yellow-950">Book Loans <span class="text-primary text-6xl leading-none">.</span></h1>
-                    <p class="text-yellow-800 font-medium">Monitor active circulations and overdue tracking.</p>
-                </div>
-
-                <div class="flex items-center gap-3">
+            <PageHeader title="Book Loans " description="Monitor active circulations and overdue tracking.">
+                    <template v-if="is_super_admin && libraries?.length">
+                        <select
+                            v-model="searchForm.library_id"
+                            @change="search"
+                            class="h-9 rounded-md border border-input bg-background px-3 text-sm focus:border-ring focus:ring-ring"
+                        >
+                            <option value="all">All Libraries</option>
+                            <option v-for="lib in libraries" :key="lib.id" :value="String(lib.id)">{{ lib.name }}</option>
+                        </select>
+                    </template>
                     <Link :href="route('admin.loans.create')" class="contents">
                         <Button class="bg-primary hover:opacity-90 text-primary-foreground rounded-lg px-4 py-2 text-sm font-bold flex items-center gap-2">
                             <Plus class="h-4 w-4" />
                             Issue New Loan
                         </Button>
                     </Link>
-                </div>
-            </div>
+            </PageHeader>
 
             <div>
                 <div class="grid gap-4 md:grid-cols-5 items-end">

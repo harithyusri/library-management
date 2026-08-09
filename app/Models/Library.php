@@ -20,13 +20,22 @@ class Library extends Model
         'longitude',
         'image',
         'is_active',
+        'max_borrow_limit',
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
         'latitude' => 'decimal:8',
         'longitude' => 'decimal:8',
+        'max_borrow_limit' => 'integer',
     ];
+
+    public const DEFAULT_BORROW_LIMIT = 10;
+
+    public function getBorrowLimit(): int
+    {
+        return $this->max_borrow_limit ?? self::DEFAULT_BORROW_LIMIT;
+    }
 
     public function bookCopies(): HasMany
     {

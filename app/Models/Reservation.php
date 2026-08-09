@@ -1,5 +1,9 @@
 <?php
+
+namespace App\Models;
+
 use App\Traits\HasLibrary;
+use App\Notifications\ReservationReadyNotification;
 use Illuminate\Database\Eloquent\Model;
 use Carbon\Carbon;
 
@@ -121,8 +125,7 @@ class Reservation extends Model
         // Update book copy status
         $bookCopy->update(['status' => 'reserved']);
 
-        // TODO: Send notification to user
-        // $this->user->notify(new ReservationReadyNotification($this));
+        $this->user->notify(new ReservationReadyNotification($this));
 
         return $this;
     }

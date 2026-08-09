@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { route } from "ziggy-js";
 import { reactive, watch } from 'vue';
+import PageHeader from '@/components/PageHeader.vue';
 import { Link, router, Head } from '@inertiajs/vue3';
 import { type BreadcrumbItem } from '@/types';
 import AppLayout from '@/layouts/AppLayout.vue';
@@ -57,6 +58,9 @@ const props = defineProps<{
     types: Record<string, string>;
     statuses: Record<string, string>;
     amenitiesList: Record<string, string>;
+    libraries: Array<{ id: number; name: string }>;
+    selected_library_id: number | null;
+    is_super_admin: boolean;
     can: Record<string, boolean>;
 }>();
 
@@ -69,12 +73,16 @@ const searchForm = reactive({
     type: props.filters?.type ?? 'all',
     status: props.filters?.status ?? 'all',
     min_capacity: props.filters?.min_capacity ?? '',
+    library_id: props.selected_library_id ? String(props.selected_library_id) : 'all',
 });
 
 let searchTimeout: ReturnType<typeof setTimeout> | null = null;
 
 const search = () => {
-    router.get(route('admin.rooms.index'), searchForm, {
+    router.get(route('admin.rooms.index'), {
+        ...searchForm,
+        library_id: searchForm.library_id !== 'all' ? searchForm.library_id : null,
+    }, {
         preserveScroll: true,
         preserveState: true,
         replace: true,
@@ -114,22 +122,14 @@ const statusConfig: Record<string, { variant: 'default' | 'secondary' | 'destruc
         <div class="space-y-6">
             <FlashAlert />
 
-            <!-- Header Section -->
-            <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-2 border-b border-border">
-                <div class="space-y-1">
-                    <h1 class="text-3xl font-black tracking-tight text-foreground">Room Management <span class="text-primary text-6xl leading-none">.</span></h1>
-                    <p class="text-muted-foreground font-medium">Manage library rooms, study areas, and facility equipment.</p>
-                </div>
-
-                <div class="flex items-center gap-3">
+            <PageHeader title="Room Management " description="Manage library rooms, study areas, and facility equipment.">
                     <Link v-if="can.createRooms" :href="route('admin.rooms.create')" class="contents">
                         <Button class="bg-primary hover:opacity-90 text-primary-foreground rounded-lg px-4 py-2 text-sm font-bold flex items-center gap-2">
                             <Plus class="h-5 w-5" />
                             Add New Room
                         </Button>
                     </Link>
-                </div>
-            </div>
+            </PageHeader>
 
             <!-- Enhanced Filters -->
             <div class="space-y-4">
@@ -190,6 +190,22 @@ const statusConfig: Record<string, { variant: 'default' | 'secondary' | 'destruc
                             Reset
                         </Button>
                     </div>
+                </div>
+
+                <!-- Library filter (super admin only) -->
+                <div v-if="is_super_admin && libraries?.length" class="flex items-center gap-3">
+                    <Label class="text-xs font-medium text-muted-foreground uppercase tracking-wider shrink-0">Library</Label>
+                    <Select v-model="searchForm.library_id" @update:model-value="search">
+                        <SelectTrigger class="w-64 bg-background">
+                            <SelectValue placeholder="All Libraries" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">All Libraries</SelectItem>
+                            <SelectItem v-for="lib in libraries" :key="lib.id" :value="String(lib.id)">
+                                {{ lib.name }}
+                            </SelectItem>
+                        </SelectContent>
+                    </Select>
                 </div>
 
                 <Separator class="bg-border/50" />

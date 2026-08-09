@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
+import PageHeader from '@/components/PageHeader.vue';
 import { BreadcrumbItemType } from '@/types';
 import { Head, router } from '@inertiajs/vue3';
 import { Badge } from '@/components/ui/badge';
@@ -10,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { ref, watch } from 'vue';
 import { Search, RotateCcw, User as UserIcon, Shield, Clock, Hash, Globe, Monitor } from 'lucide-vue-next';
+import { route } from 'ziggy-js';
 import { debounce } from 'lodash';
 
 const props = defineProps<{
@@ -32,7 +34,7 @@ const props = defineProps<{
 const breadcrumbs: BreadcrumbItemType[] = [
     {
         title: 'Audit Logs',
-        href: '/audits',
+        href: route('admin.audits.index'),
     },
 ];
 
@@ -41,7 +43,7 @@ const selectedUser = ref(props.filters.user_id || 'all');
 const auditableType = ref(props.filters.auditable_type || '');
 
 const handleFilter = debounce(() => {
-    router.get('/audits', {
+    router.get(route('admin.audits.index'), {
         event: selectedEvent.value === 'all' ? undefined : selectedEvent.value,
         user_id: selectedUser.value === 'all' ? undefined : selectedUser.value,
         auditable_type: auditableType.value || undefined,
@@ -101,13 +103,7 @@ const hasChanges = (audit: any) => {
         <Head title="Audit Logs" />
 
         <div class="space-y-6">
-            <!-- Header Section -->
-            <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-2 border-b border-slate-100">
-                <div class="space-y-1">
-                    <h1 class="text-3xl font-black tracking-tight text-slate-900">System Audit Logs <span class="text-indigo-600 text-6xl leading-none">.</span></h1>
-                    <p class="text-slate-500 font-medium">Track all sensitive activities and history across the system.</p>
-                </div>
-            </div>
+            <PageHeader title="System Audit Logs " description="Track all sensitive activities and history across the system." />
 
             <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
                 <div class="space-y-2">
@@ -152,7 +148,8 @@ const hasChanges = (audit: any) => {
                     </div>
                 </div>
 
-                <Button @click="resetFilters" class="gap-2 bg-indigo-600 hover:bg-indigo-700 text-white">
+                <Button @click="resetFilters" class="gap-2 bg-primary hover:opacity-90 text-primary-foreground text-white">
+                    <!-- bg-primary hover:opacity-90 text-primary-foreground rounded-lg px-4 py-2 text-sm font-bold flex items-center gap-2 -->
                     <RotateCcw class="h-4 w-4" />
                     Reset Filters
                 </Button>

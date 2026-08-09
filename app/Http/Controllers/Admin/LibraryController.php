@@ -29,6 +29,7 @@ class LibraryController extends Controller
                     'latitude' => $library->latitude,
                     'longitude' => $library->longitude,
                     'is_active' => $library->is_active,
+                    'max_borrow_limit' => $library->max_borrow_limit,
                     'created_at' => $library->created_at->format('M d, Y'),
                 ]),
         ]);
@@ -56,6 +57,7 @@ class LibraryController extends Controller
             'latitude' => 'nullable|numeric|between:-90,90',
             'longitude' => 'nullable|numeric|between:-180,180',
             'is_active' => 'boolean',
+            'max_borrow_limit' => 'integer|min:1|max:50',
         ]);
 
         $library = Library::create($validated);
@@ -76,6 +78,7 @@ class LibraryController extends Controller
                 'latitude' => $library->latitude,
                 'longitude' => $library->longitude,
                 'is_active' => $library->is_active,
+                'max_borrow_limit' => $library->max_borrow_limit,
             ]
         ]);
     }
@@ -94,6 +97,7 @@ class LibraryController extends Controller
             'latitude' => 'nullable|numeric|between:-90,90',
             'longitude' => 'nullable|numeric|between:-180,180',
             'is_active' => 'boolean',
+            'max_borrow_limit' => 'integer|min:1|max:50',
         ]);
 
         $library->update($validated);

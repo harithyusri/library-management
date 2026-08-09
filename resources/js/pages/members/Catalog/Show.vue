@@ -4,9 +4,8 @@ import AppLayout from '@/layouts/AppLayout.vue';
 import FlashAlert from '@/components/FlashAlert.vue';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
-import { BookOpen, User, Hash, Globe, Calendar, Layers, MapPin, BookOpenText, ShoppingBag, ArrowLeft, Bookmark } from 'lucide-vue-next';
+import { Textarea } from '@/components/ui/textarea';
+import { BookOpen, User, Globe, Calendar, MapPin, ShoppingBag, Bell, Star, Trash2, BookMarked, Building2, ChevronLeft, Quote, Library } from 'lucide-vue-next';
 import { route } from 'ziggy-js';
 import { onMounted, onUnmounted, ref, computed } from 'vue';
 
@@ -14,6 +13,10 @@ const props = defineProps<{
     book: any;
     available_copies_count: number;
     is_member: boolean;
+    has_active_reservation: boolean;
+    has_borrowed: boolean;
+    user_review: any | null;
+    recommended_books: any[];
 }>();
 
 const breadcrumbs = [
@@ -21,51 +24,74 @@ const breadcrumbs = [
     { title: props.book.title, href: route('member.catalog.show', props.book.id) },
 ];
 
-const borrowForm = useForm({});
+const borrowForm = useForm({ library_id: null as number | null });
+const reserveForm = useForm({});
+const reviewForm = useForm({ rating: props.user_review?.rating ?? 0, body: props.user_review?.body ?? '' });
 
-const borrowBook = () => {
-    if (!confirm('Are you sure you want to borrow this book now?')) return;
+const showLibraryDialog = ref(false);
+
+const availableCopiesByLibrary = computed(() => {
+    const grouped: Record<number, { library: any; copies: any[]; distance?: number }> = {};
+    for (const copy of props.book.copies) {
+        if (copy.status !== 'available') continue;
+        const libId = copy.library?.id ?? 0;
+        if (!grouped[libId]) {
+            grouped[libId] = { library: copy.library, copies: [], distance: distances.value[copy.id] };
+        }
+        grouped[libId].copies.push(copy);
+        if (distances.value[copy.id] !== undefined) {
+            grouped[libId].distance = Math.min(grouped[libId].distance ?? Infinity, distances.value[copy.id]);
+        }
+    }
+    return Object.values(grouped).sort((a, b) => (a.distance ?? Infinity) - (b.distance ?? Infinity));
+});
+
+const openBorrowDialog = () => { showLibraryDialog.value = true; };
+
+const selectLibrary = (libraryId: number) => {
+    borrowForm.library_id = libraryId;
+    showLibraryDialog.value = false;
     borrowForm.post(route('member.catalog.borrow', props.book.id));
 };
 
-const formatLabel = (key: string) => {
-    return key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+const reserveBook = () => {
+    if (!confirm('Join the waitlist for this book?')) return;
+    reserveForm.post(route('member.reservations.store', props.book.id));
 };
+
+const submitReview = () => {
+    reviewForm.post(route('member.catalog.review.store', props.book.id), { preserveScroll: true });
+};
+
+const deleteReview = () => {
+    if (!confirm('Delete your review?')) return;
+    reviewForm.delete(route('member.catalog.review.destroy', props.user_review.id), { preserveScroll: true });
+};
+
+const avgRating = computed(() => {
+    if (!props.book.reviews?.length) return 0;
+    return props.book.reviews.reduce((s: number, r: any) => s + r.rating, 0) / props.book.reviews.length;
+});
 
 const formatDistance = (dist?: number) => {
     if (dist === undefined || dist === null) return null;
     return dist < 1 ? (dist * 1000).toFixed(0) + ' m' : dist.toFixed(1) + ' km';
 };
 
-// Haversine formula — returns distance in km between two lat/lng points
 const haversine = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
     const R = 6371;
     const dLat = ((lat2 - lat1) * Math.PI) / 180;
     const dLon = ((lon2 - lon1) * Math.PI) / 180;
-    const a =
-        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-        Math.cos((lat1 * Math.PI) / 180) *
-            Math.cos((lat2 * Math.PI) / 180) *
-            Math.sin(dLon / 2) *
-            Math.sin(dLon / 2);
+    const a = Math.sin(dLat / 2) ** 2 + Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLon / 2) ** 2;
     return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 };
 
-// Reactive distances keyed by copy id
 const distances = ref<Record<number, number>>({});
 
 const sortedCopies = computed(() => {
     const hasDist = Object.keys(distances.value).length > 0;
-    return [...props.book.copies].map(copy => ({
-        ...copy,
-        distance: distances.value[copy.id] ?? undefined,
-    })).sort((a, b) => {
-        if (hasDist) {
-            const da = a.distance ?? Infinity;
-            const db = b.distance ?? Infinity;
-            return da - db;
-        }
-        // fallback: available first
+    return [...props.book.copies].map(copy => ({ ...copy, distance: distances.value[copy.id] })).sort((a, b) => {
+        if (hasDist) return (a.distance ?? Infinity) - (b.distance ?? Infinity);
         if (a.status === 'available' && b.status !== 'available') return -1;
         if (b.status === 'available' && a.status !== 'available') return 1;
         return 0;
@@ -73,9 +99,7 @@ const sortedCopies = computed(() => {
 });
 
 const updateDistances = (position: GeolocationPosition) => {
-    const userLat = position.coords.latitude;
-    const userLng = position.coords.longitude;
-
+    const { latitude: userLat, longitude: userLng } = position.coords;
     const result: Record<number, number> = {};
     for (const copy of props.book.copies) {
         const lib = copy.library;
@@ -90,282 +114,307 @@ let watcherId: number | null = null;
 
 onMounted(() => {
     if (!('geolocation' in navigator)) return;
-
-    watcherId = navigator.geolocation.watchPosition(
-        updateDistances,
-        (err) => {
-            // Blocked on HTTP — run with a debug mock position so the UI can be tested
-            // Remove this fallback once HTTPS is enabled (run: herd secure library-management)
-            if (import.meta.env.DEV) {
-                console.warn('[Distance] Geolocation blocked (HTTP). Run `herd secure` for real distances.');
-                // Mock: use the first library's own coords so you see "0 m away"
-                const firstLib = props.book.copies?.[0]?.library;
-                if (firstLib?.latitude && firstLib?.longitude) {
-                    updateDistances({
-                        coords: {
-                            latitude: Number(firstLib.latitude),
-                            longitude: Number(firstLib.longitude),
-                            accuracy: 0, altitude: null, altitudeAccuracy: null,
-                            heading: null, speed: null,
-                        },
-                        timestamp: Date.now(),
-                    } as GeolocationPosition);
-                }
-            }
-        },
-        { enableHighAccuracy: false, maximumAge: 10000, timeout: 10000 }
-    );
+    watcherId = navigator.geolocation.watchPosition(updateDistances, () => {}, { enableHighAccuracy: false, maximumAge: 10000, timeout: 10000 });
 });
 
-onUnmounted(() => {
-    if (watcherId !== null) {
-        navigator.geolocation.clearWatch(watcherId);
-    }
-});
+onUnmounted(() => { if (watcherId !== null) navigator.geolocation.clearWatch(watcherId); });
 </script>
 
 <template>
     <Head :title="book.title" />
 
     <AppLayout :breadcrumbs="breadcrumbs">
-        <div class="space-y-8">
+        <div class="max-w-6xl mx-auto px-5 lg:px-8 py-8 space-y-10">
             <FlashAlert />
 
-            <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-2">
-                <div class="space-y-1">
-                    <h1 class="text-3xl font-black tracking-tight text-slate-900">Book Details <span class="text-emerald-600 text-6xl leading-none">.</span></h1>
-                </div>
-            </div>
+            <!-- Back link -->
+            <Link :href="route('member.catalog.index')" class="hidden sm:inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition">
+                <ChevronLeft class="h-4 w-4" /> Back to catalog
+            </Link>
 
-            <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
-                <!-- Left: Visual Column -->
-                <div class="lg:col-span-4 space-y-6">
-                    <div class="relative rounded-3xl overflow-hidden shadow-2xl border-4 border-white bg-slate-100 aspect-[3/4]">
-                        <div class="h-full w-full flex items-center justify-center p-8 bg-slate-50">
-                            <img 
-                                v-if="book.cover_image" 
-                                :src="book.cover_image" 
-                                :alt="book.title"
-                                class="h-full object-contain shadow-2xl skew-y-1 group-hover:skew-y-0 transition-transform duration-700"
-                            />
-                        </div>
-                        <div v-if="!book.cover_image" class="w-full h-full flex flex-col items-center justify-center p-12 text-slate-300">
-                            <BookOpen class="h-24 w-24 mb-4" />
-                            <span class="text-lg font-black uppercase tracking-widest">No Cover Image</span>
-                        </div>
-                        
-                        <div class="absolute top-4 right-4 animate-in fade-in zoom-in duration-500">
-                            <Badge 
-                                variant="default" 
-                                class="px-4 py-1.5 shadow-xl border-0 text-xs font-bold"
-                                :class="available_copies_count > 0 ? 'bg-emerald-500' : 'bg-slate-500'"
-                            >
-                                {{ available_copies_count > 0 ? 'Available Now' : 'Currently Borrowed' }}
-                            </Badge>
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-4">
-                        <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex flex-col items-center justify-center text-center">
-                            <span class="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Pages</span>
-                            <div class="flex items-center gap-2">
-                                <Layers class="h-3.5 w-3.5 text-indigo-500" />
-                                <span class="text-sm font-black text-slate-900">{{ book.pages || 'N/A' }}</span>
+            <!-- Hero -->
+            <section class="rounded-2xl border border-border bg-gradient-to-br from-amber-50/60 to-stone-100/40 p-6 md:p-10">
+                <div class="flex flex-col lg:flex-row gap-8 lg:gap-12">
+                    <!-- Spine plate cover -->
+                    <div class="lg:w-64 shrink-0 mx-auto lg:mx-0">
+                        <div class="relative">
+                            <span class="absolute inset-0 translate-x-2 translate-y-2 rounded-xl opacity-20 bg-amber-700" />
+                            <div class="relative aspect-[2/3] overflow-hidden rounded-xl border border-border bg-card shadow-xl">
+                                <template v-if="book.cover_image">
+                                    <img :src="book.cover_image" :alt="book.title" class="w-full h-full object-cover" />
+                                </template>
+                                <template v-else>
+                                    <span class="absolute left-0 top-0 h-full w-3 bg-amber-700" />
+                                    <div class="h-full flex flex-col justify-between pl-7 pr-5 py-7">
+                                        <div>
+                                            <p class="text-[10px] uppercase tracking-[0.24em] text-muted-foreground">{{ book.category?.name || 'Book' }}</p>
+                                            <h2 class="mt-3 font-serif text-2xl leading-tight">{{ book.title }}</h2>
+                                            <p class="mt-2 text-xs text-muted-foreground">{{ book.author_name }}</p>
+                                        </div>
+                                        <BookOpen class="h-7 w-7 text-amber-600" />
+                                    </div>
+                                </template>
                             </div>
-                        </div>
-                        <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex flex-col items-center justify-center text-center">
-                            <span class="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Language</span>
-                            <div class="flex items-center gap-2">
-                                <Globe class="h-3.5 w-3.5 text-purple-500" />
-                                <span class="text-sm font-black text-slate-900 uppercase">{{ book.language || 'N/A' }}</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Right: Content Column -->
-                <div class="lg:col-span-8 space-y-10">
-                    <div class="space-y-4">
-                        <div class="flex flex-wrap gap-2">
-                            <Badge variant="secondary" class="bg-indigo-50 text-indigo-600 border-indigo-100 font-bold uppercase tracking-widest text-[10px] px-3 py-1">
-                                {{ book.category?.name || 'Uncategorized' }}
-                            </Badge>
-                            <Badge v-for="genre in book.genres" :key="genre.id" variant="outline" class="text-[10px] border-slate-200 text-slate-500 font-bold tracking-widest uppercase">
-                                {{ genre.name }}
-                            </Badge>
-                        </div>
-                        <h1 class="text-4xl md:text-6xl font-black text-slate-900 tracking-tight leading-[1.1]">
-                            {{ book.title }}
-                        </h1>
-                        <div class="flex items-center gap-3">
-                            <div class="h-10 w-10 flex items-center justify-center bg-indigo-600 rounded-full text-white shadow-lg shadow-indigo-100">
-                                <User class="h-5 w-5" />
-                            </div>
-                            <div class="flex flex-col">
-                                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest italic">Author</span>
-                                <span class="text-xl font-bold text-slate-800">{{ book.author_name }}</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <Separator class="bg-slate-100" />
-
-                    <div class="prose prose-slate max-w-none">
-                        <h3 class="text-xl font-black text-slate-900 mb-4 flex items-center gap-2">
-                            <BookOpenText class="h-5 w-5 text-indigo-500" />
-                            Synopsis
-                        </h3>
-                        <p class="text-slate-600 leading-relaxed text-lg">
-                            {{ book.description || 'No description provided for this book.' }}
-                        </p>
-                    </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        <div class="bg-slate-50 p-6 rounded-3xl space-y-4 border border-slate-100">
-                            <h3 class="font-black text-slate-900 tracking-tight flex items-center gap-2">
-                                <Calendar class="h-5 w-5 text-purple-500" />
-                                Edition Details
-                            </h3>
-                            <div class="space-y-3">
-                                <div class="flex items-center justify-between">
-                                    <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">ISBN</span>
-                                    <span class="text-xs font-black text-slate-800 font-mono">{{ book.isbn || 'N/A' }}</span>
-                                </div>
-                                <div class="flex items-center justify-between">
-                                    <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">Publisher</span>
-                                    <span class="text-xs font-black text-slate-800">{{ book.publisher?.name || 'N/A' }}</span>
-                                </div>
-                                <div class="flex items-center justify-between">
-                                    <span class="text-xs text-slate-400 font-bold uppercase tracking-widest">Published</span>
-                                    <span class="text-xs font-black text-slate-800">{{ book.published_year || 'N/A' }}</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="bg-white p-4 rounded-3xl border-4 border-indigo-600/10 space-y-6 shadow-xl shadow-indigo-50 flex flex-col items-center text-center justify-center">
-                            <div class="space-y-2">
-                                <p class="text-sm font-black text-slate-900">Current Availability</p>
-                                <div class="flex items-center justify-center gap-2">
-                                    <span class="text-4xl font-black text-indigo-600">{{ available_copies_count }}</span>
-                                    <span class="text-slate-400 text-sm font-bold uppercase tracking-widest">Available</span>
-                                </div>
-                                <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest italic">
-                                    Out of {{ book.copies?.length || 0 }} total copies
-                                </p>
-                            </div>
-
-                            <Button 
-                                v-if="is_member && available_copies_count > 0"
-                                size="lg" 
-                                @click="borrowBook"
-                                :disabled="borrowForm.processing"
-                                class="w-4xs h-9 bg-indigo-600 hover:bg-slate-900 rounded-xl font-black text-lg shadow-2xl shadow-indigo-200 transition-all active:scale-95 group"
-                            >
-                                <ShoppingBag v-if="!borrowForm.processing" class="h-6 w-6 mr-1 group-hover:animate-bounce" />
-                                {{ borrowForm.processing ? 'Processing...' : 'Borrow' }}
-                            </Button>
-                            <p v-else-if="!is_member" class="text-sm font-bold text-slate-400 max-w-[200px]">
-                                Staff and Librarians can manage copies in the admin dashboard.
-                            </p>
-                            <p v-else class="text-sm font-black text-red-500 animate-pulse uppercase tracking-tight">
-                                This book is currently fully checked out.
-                            </p>
-                        </div>
-                    </div>
-
-                    <!-- Fine Details -->
-                    <Card v-if="book.copies && book.copies.length > 0" class="rounded-3xl shadow-sm border-slate-100 overflow-hidden">
-                        <div class="bg-slate-50 px-6 py-4 border-b border-slate-100 flex items-center justify-between">
-                            <h4 class="text-sm font-black text-slate-900 flex items-center gap-2">
-                                <Bookmark class="h-4 w-4 text-indigo-600" />
-                                Copy Register
-                            </h4>
-                            <span class="text-[10px] bg-white px-2 py-0.5 rounded-full border border-slate-200 font-bold uppercase text-slate-500">
-                                {{ book.copies.length }} Copies
+                            <span :class="available_copies_count > 0 ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-muted text-muted-foreground border-border'"
+                                class="absolute -top-3 -right-3 rounded-full border px-3 py-1 text-[11px] shadow-md">
+                                {{ available_copies_count > 0 ? 'Available' : 'All out' }}
                             </span>
                         </div>
-                        <CardContent class="pt-0 px-2">
-                            <!-- Desktop Table View -->
-                            <div class="hidden md:block">
-                                <table class="w-full text-left">
-                                    <thead class="bg-slate-100/50 text-slate-400 text-[10px] font-black tracking-widest uppercase">
-                                        <tr>
-                                            <th class="px-6 py-3 text-start">Library / Location</th>
-                                            <th class="px-6 py-3 text-start">Book Number</th>
-                                            <th class="px-6 py-3 text-start">Status</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody class="divide-y divide-slate-50">
-                                        <tr v-for="copy in sortedCopies" :key="copy.id" class="text-sm group hover:bg-slate-50/50 transition-colors">
-                                            <td class="px-6 py-4">
-                                                <div class="flex flex-col">
-                                                    <span class="font-black text-slate-800">{{ copy.library?.name || 'Central Library' }}</span>
-                                                    <div class="flex items-center gap-2 mt-0.5">
-                                                        <span v-if="copy.location" class="text-xs text-slate-500 flex items-center gap-1">
-                                                            <MapPin class="h-3 w-3" /> {{ copy.location }}
-                                                        </span>
-                                                        <Badge v-if="copy.distance !== undefined" variant="secondary" class="h-5 rounded-full px-2 text-[10px] bg-indigo-50 text-indigo-600 border-0">
-                                                            {{ formatDistance(copy.distance) }} away
-                                                        </Badge>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td class="px-6 py-4">
-                                                <Badge 
-                                                    variant="outline"
-                                                >
-                                                    {{ copy.call_number }}
-                                                </Badge>
-                                            </td>
-                                            <td class="px-6 py-4">
-                                                <Badge 
-                                                    variant="outline" 
-                                                    class="text-[10px] border-0 font-bold uppercase"
-                                                    :class="copy.status === 'available' ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'"
-                                                >
-                                                    {{ copy.status }}
-                                                </Badge>
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
+                    </div>
 
-                            <!-- Mobile Card View -->
-                            <div class="md:hidden divide-y divide-slate-100">
-                                <div v-for="copy in sortedCopies" :key="copy.id" class="p-4 space-y-3">
-                                    <div class="flex items-center justify-between">
-                                        <div class="flex flex-col">
-                                            <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Barcode</span>
-                                            <span class="text-sm font-mono font-bold text-slate-600">{{ copy.barcode }}</span>
-                                        </div>
-                                        <Badge 
-                                            variant="outline" 
-                                            class="text-[10px] border-0 font-bold uppercase px-3 py-1"
-                                            :class="copy.status === 'available' ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'"
-                                        >
-                                            {{ copy.status }}
-                                        </Badge>
-                                    </div>
-                                    <div class="flex flex-col">
-                                        <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Library / Location</span>
-                                        <div class="flex items-center flex-wrap gap-2 mt-0.5">
-                                            <div class="flex items-center gap-1">
-                                                <MapPin class="h-3 w-3 text-indigo-500" />
-                                                <span class="text-xs font-black text-slate-700">{{ copy.library?.name || 'Central Library' }}</span>
-                                            </div>
-                                            <span v-if="copy.location" class="text-[10px] text-slate-500">({{ copy.location }})</span>
-                                            <Badge v-if="copy.distance !== undefined" variant="secondary" class="h-4 rounded-full px-2 text-[9px] bg-indigo-50 text-indigo-600 border-0">
-                                                {{ formatDistance(copy.distance) }} away
-                                            </Badge>
-                                        </div>
-                                    </div>
-                                </div>
+                    <!-- Info -->
+                    <div class="flex-1 space-y-5">
+                        <div class="flex flex-wrap gap-2">
+                            <Badge class="bg-amber-700/20 border border-amber-700/40 text-amber-900 text-[11px]">{{ book.category?.name || 'Uncategorized' }}</Badge>
+                            <Badge v-for="genre in book.genres" :key="genre.id" variant="outline" class="bg-card/70 text-[11px]">{{ genre.name }}</Badge>
+                        </div>
+
+                        <h1 class="font-serif text-4xl lg:text-5xl leading-[1.05] text-foreground">{{ book.title }}</h1>
+
+                        <div class="flex items-center gap-3">
+                            <span class="h-10 w-10 rounded-full bg-[#0d1a14] grid place-items-center">
+                                <User class="h-5 w-5 text-white" />
+                            </span>
+                            <span>
+                                <span class="block text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Author</span>
+                                <span class="block text-base font-medium">{{ book.author_name }}</span>
+                            </span>
+                        </div>
+
+                        <div class="flex flex-wrap items-center gap-2.5 text-sm">
+                            <span v-if="book.published_year" class="flex items-center gap-2 rounded-full bg-card px-3 py-1.5 shadow-sm">
+                                <Calendar class="h-4 w-4 text-amber-600" />
+                                <span class="text-xs">{{ book.published_year }}</span>
+                            </span>
+                            <span v-if="book.pages" class="flex items-center gap-2 rounded-full bg-card px-3 py-1.5 shadow-sm">
+                                <BookMarked class="h-4 w-4 text-amber-600" />
+                                <span class="text-xs">{{ book.pages }} pages</span>
+                            </span>
+                            <span v-if="book.language" class="flex items-center gap-2 rounded-full bg-card px-3 py-1.5 shadow-sm">
+                                <Globe class="h-4 w-4 text-amber-600" />
+                                <span class="text-xs uppercase">{{ book.language }}</span>
+                            </span>
+                            <span v-if="book.reviews?.length" class="flex items-center gap-1.5 rounded-full bg-card px-3 py-1.5 shadow-sm">
+                                <Star class="h-4 w-4 fill-amber-500 text-amber-500" />
+                                <span class="text-xs font-semibold">{{ avgRating.toFixed(1) }}</span>
+                                <span class="text-xs text-muted-foreground">({{ book.reviews.length }})</span>
+                            </span>
+                        </div>
+
+                        <div class="flex flex-wrap items-center gap-4 pt-4 border-t border-border">
+                            <p class="flex items-baseline gap-2">
+                                <span class="font-serif text-4xl" :class="available_copies_count > 0 ? 'text-emerald-600' : 'text-muted-foreground'">{{ available_copies_count }}</span>
+                                <span class="text-sm text-muted-foreground">/ {{ book.copies?.length || 0 }} copies available</span>
+                            </p>
+                            <div class="flex-1" />
+                            <Button v-if="is_member && available_copies_count > 0" size="lg" @click="openBorrowDialog" :disabled="borrowForm.processing"
+                                class="bg-[#0d1a14] hover:bg-[#1a2a1f] rounded-xl px-8 shadow-md transition">
+                                <ShoppingBag class="h-4 w-4 mr-2" />
+                                {{ borrowForm.processing ? 'Processing...' : 'Borrow Now' }}
+                            </Button>
+                            <Button v-else-if="is_member && available_copies_count === 0 && !has_active_reservation" size="lg" @click="reserveBook"
+                                :disabled="reserveForm.processing" class="bg-amber-600 hover:bg-amber-700 rounded-xl px-8 shadow-md">
+                                <Bell class="h-4 w-4 mr-2" />
+                                {{ reserveForm.processing ? 'Processing...' : 'Join Waitlist' }}
+                            </Button>
+                            <div v-else-if="is_member && has_active_reservation" class="flex items-center gap-2 px-4 py-2 bg-amber-50 rounded-xl border border-amber-200">
+                                <Bell class="h-4 w-4 text-amber-600" />
+                                <span class="font-medium text-amber-700 text-sm">You're on the waitlist</span>
                             </div>
-                        </CardContent>
-                    </Card>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Content Grid -->
+            <div class="grid gap-8 lg:grid-cols-3">
+                <!-- Left column -->
+                <div class="lg:col-span-2 space-y-8">
+                    <!-- Synopsis -->
+                    <section class="rounded-2xl border border-border bg-card p-6 shadow-sm">
+                        <h3 class="flex items-center gap-2 font-serif text-xl">
+                            <Quote class="h-4 w-4 text-amber-600" /> Synopsis
+                        </h3>
+                        <p class="mt-4 text-sm leading-7 text-muted-foreground first-letter:font-serif first-letter:text-4xl first-letter:leading-none first-letter:mr-1 first-letter:float-left first-letter:text-amber-800">
+                            {{ book.description || 'No description available for this book.' }}
+                        </p>
+                    </section>
+
+                    <!-- Copies -->
+                    <section v-if="book.copies?.length" class="rounded-2xl border border-border bg-card shadow-sm overflow-hidden">
+                        <div class="px-6 py-4 border-b border-border flex items-center justify-between">
+                            <h3 class="flex items-center gap-2 font-serif text-xl">
+                                <MapPin class="h-4 w-4 text-amber-600" /> Find a copy
+                            </h3>
+                            <span class="text-xs text-muted-foreground">{{ book.copies.length }} locations</span>
+                        </div>
+                        <ul class="divide-y divide-border">
+                            <li v-for="copy in sortedCopies" :key="copy.id" class="flex items-center gap-4 px-6 py-3.5 hover:bg-muted/30 transition">
+                                <span class="h-10 w-10 shrink-0 rounded-lg bg-muted grid place-items-center">
+                                    <Building2 class="h-4 w-4 text-amber-700" />
+                                </span>
+                                <span class="min-w-0 flex-1">
+                                    <span class="block text-sm truncate font-medium">{{ copy.library?.name || 'Central Library' }}</span>
+                                    <span class="block text-[11px] text-muted-foreground">
+                                        {{ copy.location }}<template v-if="copy.distance !== undefined"> · {{ formatDistance(copy.distance) }} away</template>
+                                    </span>
+                                </span>
+                                <code class="hidden sm:block font-mono text-[11px] text-muted-foreground">{{ copy.call_number }}</code>
+                                <span :class="copy.status === 'available' ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : 'bg-muted text-muted-foreground border-border'"
+                                    class="shrink-0 rounded-full border px-2.5 py-0.5 text-[11px] capitalize">
+                                    {{ copy.status }}
+                                </span>
+                            </li>
+                        </ul>
+                    </section>
+
+                    <!-- Reviews -->
+                    <section class="rounded-2xl border border-border bg-card p-6 shadow-sm space-y-6">
+                        <div class="flex items-center justify-between gap-3">
+                            <h3 class="flex items-center gap-2 font-serif text-xl">
+                                <Star class="h-4 w-4 text-amber-600" /> Reader notes
+                            </h3>
+                            <span v-if="book.reviews?.length" class="flex items-center gap-1.5 text-xs text-muted-foreground">
+                                <Star class="h-3.5 w-3.5 fill-amber-500 text-amber-500" />
+                                {{ avgRating.toFixed(1) }} ({{ book.reviews.length }})
+                            </span>
+                        </div>
+
+                        <!-- Write Review -->
+                        <div v-if="is_member && has_borrowed" class="rounded-xl border border-border bg-muted/40 p-5 space-y-3">
+                            <p class="text-sm">{{ user_review ? 'Edit your note' : 'Leave a note in the margin' }}</p>
+                            <div class="flex items-center gap-1">
+                                <button v-for="i in 5" :key="i" @click="reviewForm.rating = i" class="p-0.5 transition hover:scale-110">
+                                    <Star class="h-6 w-6" :class="i <= reviewForm.rating ? 'fill-amber-500 text-amber-500' : 'text-border'" />
+                                </button>
+                            </div>
+                            <Textarea v-model="reviewForm.body" placeholder="What did you think of this volume?" rows="3"
+                                class="resize-none rounded-lg border-border bg-card text-sm" />
+                            <div class="flex items-center gap-3">
+                                <Button :disabled="reviewForm.processing || reviewForm.rating === 0"
+                                    class="bg-[#0d1a14] hover:bg-[#1a2a1f] rounded-lg text-xs px-4 py-2" @click="submitReview">
+                                    {{ user_review ? 'Update note' : 'Post note' }}
+                                </Button>
+                                <Button v-if="user_review" variant="ghost" class="text-destructive hover:bg-destructive/10 rounded-lg text-xs" @click="deleteReview">
+                                    <Trash2 class="h-3.5 w-3.5 mr-1.5" /> Delete
+                                </Button>
+                            </div>
+                            <p v-if="reviewForm.errors.rating" class="text-xs text-destructive">{{ reviewForm.errors.rating }}</p>
+                        </div>
+
+                        <!-- Reviews List -->
+                        <ul v-if="book.reviews?.length" class="space-y-5">
+                            <li v-for="review in book.reviews" :key="review.id" class="flex gap-4">
+                                <span class="h-9 w-9 shrink-0 rounded-full bg-[#0d1a14] grid place-items-center text-xs font-semibold text-white">
+                                    {{ review.user?.name?.charAt(0).toUpperCase() }}
+                                </span>
+                                <span class="min-w-0">
+                                    <span class="flex items-center gap-3">
+                                        <span class="text-sm font-medium">{{ review.user?.name }}</span>
+                                        <span class="flex items-center gap-0.5">
+                                            <Star v-for="i in 5" :key="i" class="h-3 w-3" :class="i <= review.rating ? 'fill-amber-500 text-amber-500' : 'text-border'" />
+                                        </span>
+                                    </span>
+                                    <span v-if="review.body" class="mt-1.5 block text-sm leading-6 text-muted-foreground">{{ review.body }}</span>
+                                </span>
+                            </li>
+                        </ul>
+                        <p v-else class="text-center text-muted-foreground py-4 text-sm">No notes yet. Be the first to share your thoughts!</p>
+                    </section>
+                </div>
+
+                <!-- Sidebar -->
+                <aside class="space-y-6">
+                    <!-- Catalogue record -->
+                    <section class="rounded-2xl border border-border bg-card p-6 shadow-sm">
+                        <h3 class="font-serif text-lg">Catalogue record</h3>
+                        <dl class="mt-4 space-y-3 text-sm">
+                            <div v-for="[k, v] in [['ISBN', book.isbn], ['Publisher', book.publisher?.name], ['Published', book.published_year], ['Pages', book.pages], ['Language', book.language]]"
+                                :key="k" class="flex items-baseline justify-between gap-4 border-b border-dashed border-border pb-2 last:border-0">
+                                <dt class="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">{{ k }}</dt>
+                                <dd class="text-right font-mono text-xs">{{ v || 'N/A' }}</dd>
+                            </div>
+                        </dl>
+                    </section>
+
+                    <!-- Shelved nearby -->
+                    <section v-if="recommended_books.length" class="rounded-2xl border border-border bg-card p-6 shadow-sm">
+                        <h3 class="flex items-center gap-2 font-serif text-lg">
+                            <Library class="h-4 w-4 text-amber-600" /> Shelved nearby
+                        </h3>
+                        <ul class="mt-4 space-y-3">
+                            <li v-for="rec in recommended_books.slice(0, 4)" :key="rec.id">
+                                <Link :href="route('member.catalog.show', rec.id)"
+                                    class="group flex items-center gap-3 rounded-lg border border-transparent p-2 transition hover:border-border hover:bg-muted/40">
+                                    <span class="h-14 w-10 shrink-0 rounded-sm border border-border overflow-hidden bg-muted">
+                                        <img v-if="rec.cover_image" :src="rec.cover_image" :alt="rec.title" class="w-full h-full object-cover" />
+                                        <span v-else class="w-full h-full flex items-center justify-center">
+                                            <BookOpen class="h-4 w-4 text-muted-foreground" />
+                                        </span>
+                                    </span>
+                                    <span class="min-w-0">
+                                        <span class="block truncate font-serif text-sm group-hover:text-amber-700 transition">{{ rec.title }}</span>
+                                        <span class="block truncate text-[11px] text-muted-foreground">{{ rec.author_name }}</span>
+                                    </span>
+                                </Link>
+                            </li>
+                        </ul>
+                    </section>
+
+                    <!-- Desk note -->
+                    <section class="rounded-xl border border-amber-700/30 bg-gradient-to-br from-amber-50/60 to-stone-100/40 p-6">
+                        <p class="font-serif italic leading-relaxed text-sm text-foreground/80">
+                            "A good book is the precious life-blood of a master spirit."
+                        </p>
+                        <p class="mt-3 text-[11px] uppercase tracking-[0.2em] text-muted-foreground">Desk note</p>
+                    </section>
+                </aside>
+            </div>
+
+            <!-- More like this -->
+            <section v-if="recommended_books.length > 4">
+                <h3 class="font-serif text-2xl">More like this</h3>
+                <div class="mt-5 grid gap-5 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
+                    <Link v-for="rec in recommended_books.slice(4)" :key="rec.id" :href="route('member.catalog.show', rec.id)"
+                        class="relative rounded-2xl border border-border bg-card overflow-hidden p-4 transition hover:-translate-y-0.5 hover:shadow-md">
+                        <div class="mb-3 aspect-[2/3] rounded-lg overflow-hidden bg-muted">
+                            <img v-if="rec.cover_image" :src="rec.cover_image" :alt="rec.title" class="w-full h-full object-cover" />
+                            <div v-else class="w-full h-full flex items-center justify-center text-muted-foreground">
+                                <BookOpen class="h-8 w-8" />
+                            </div>
+                        </div>
+                        <p class="font-serif text-sm leading-tight line-clamp-2 group-hover:text-amber-700 transition">{{ rec.title }}</p>
+                        <p class="mt-1 text-xs text-muted-foreground truncate">{{ rec.author_name }}</p>
+                    </Link>
+                </div>
+            </section>
+        </div>
+
+        <!-- Library picker overlay -->
+        <Teleport to="body">
+            <div v-if="showLibraryDialog" class="fixed inset-0 z-30 grid place-items-center bg-black/50 p-5" role="dialog" aria-modal="true">
+                <div class="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-xl">
+                    <h4 class="flex items-center gap-2 font-serif text-xl">
+                        <Building2 class="h-4 w-4 text-amber-600" /> Choose a branch
+                    </h4>
+                    <p class="mt-1 text-xs text-muted-foreground">Collect at the front desk within 24 hours.</p>
+                    <div class="mt-4 space-y-2 max-h-[300px] overflow-y-auto">
+                        <button v-for="item in availableCopiesByLibrary" :key="item.library?.id ?? 0"
+                            @click="selectLibrary(item.library?.id)"
+                            class="flex w-full items-center gap-3 rounded-xl border border-border p-4 text-left transition hover:border-amber-600/60 hover:bg-amber-50/40">
+                            <span class="min-w-0 flex-1">
+                                <span class="block text-sm font-semibold">{{ item.library?.name ?? 'Central Library' }}</span>
+                                <span class="block text-[11px] text-muted-foreground">{{ item.copies.length }} available</span>
+                            </span>
+                            <span v-if="item.distance !== undefined" class="text-[11px] text-amber-700 font-medium">{{ formatDistance(item.distance) }}</span>
+                        </button>
+                    </div>
+                    <button @click="showLibraryDialog = false"
+                        class="mt-4 w-full rounded-lg border border-border py-2 text-xs text-muted-foreground transition hover:text-foreground">
+                        Cancel
+                    </button>
                 </div>
             </div>
-        </div>
+        </Teleport>
     </AppLayout>
 </template>

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { route } from "ziggy-js";
 import { reactive, ref, watch } from 'vue';
+import PageHeader from '@/components/PageHeader.vue';
 import { Link, router } from '@inertiajs/vue3';
 import { type BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/vue3';
@@ -82,6 +83,9 @@ const props = defineProps<{
     categories: Category[];
     formatOptions: Record<string, string>;
     languageOptions: Record<string, string>;
+    libraries: Array<{ id: number; name: string }>;
+    selected_library_id: number | null;
+    is_super_admin: boolean;
 }>();
 
 /* =========================
@@ -95,6 +99,7 @@ const searchForm = reactive({
     language: props.filters?.language ?? 'all',
     sort_by: props.filters?.sort_by ?? 'created_at',
     sort_order: props.filters?.sort_order ?? 'desc',
+    library_id: props.selected_library_id ? String(props.selected_library_id) : 'all',
 });
 
 const viewMode = ref(localStorage.getItem('admin_books_view_mode') || 'grid');
@@ -144,14 +149,7 @@ const formatBookFormat = (format: string): string => {
         <div class="flex flex-1 flex-col gap-6 overflow-x-auto">
 
             <FlashAlert />
-            <!-- Header Section -->
-            <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-2 border-b border-slate-100">
-                <div class="space-y-1">
-                    <h1 class="text-3xl font-black tracking-tight text-yellow-950">Books Inventory <span class="text-primary text-6xl leading-none">.</span></h1>
-                    <p class="text-yellow-800 font-medium">Manage the complete library collection and stock levels.</p>
-                </div>
-
-                <div class="flex items-center gap-3">
+            <PageHeader title="Books Inventory " description="Manage the complete library collection and stock levels.">
                     <Tabs :model-value="viewMode" @update:model-value="val => { viewMode = val as string; }" class="mr-2">
                         <TabsList>
                             <TabsTrigger value="grid"><LayoutGrid class="h-4 w-4" /></TabsTrigger>
@@ -165,8 +163,7 @@ const formatBookFormat = (format: string): string => {
                             Add New Book
                         </Button>
                     </Link>
-                </div>
-            </div>
+            </PageHeader>
 
             <!-- Filters -->
             <div class="grid gap-4 md:grid-cols-5">
@@ -229,6 +226,22 @@ const formatBookFormat = (format: string): string => {
                             <SelectItem value="all">All Formats</SelectItem>
                             <SelectItem v-for="(label, key) in formatOptions" :key="key" :value="key">
                                 {{ label }}
+                            </SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+
+                <!-- Library (super admin only) -->
+                <div v-if="is_super_admin && libraries?.length">
+                    <label class="mb-1 block text-sm font-medium text-foreground">Library</label>
+                    <Select v-model="searchForm.library_id" @update:model-value="search">
+                        <SelectTrigger>
+                            <SelectValue placeholder="All Libraries" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">All Libraries</SelectItem>
+                            <SelectItem v-for="lib in libraries" :key="lib.id" :value="String(lib.id)">
+                                {{ lib.name }}
                             </SelectItem>
                         </SelectContent>
                     </Select>

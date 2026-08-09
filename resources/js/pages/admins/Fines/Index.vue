@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Head, router, useForm } from '@inertiajs/vue3';
+import PageHeader from '@/components/PageHeader.vue';
 import { ref, computed, watch } from 'vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { BreadcrumbItem } from '@/types';
@@ -46,6 +47,9 @@ const props = defineProps<{
     filters: {
         search: string;
     };
+    libraries: Array<{ id: number; name: string }>;
+    selected_library_id: number | null;
+    is_super_admin: boolean;
 }>();
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -53,6 +57,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 const searchQuery = ref(props.filters.search || '');
+const selectedLibrary = ref(props.selected_library_id ? String(props.selected_library_id) : 'all');
 const isPaymentDialogOpen = ref(false);
 const selectedFine = ref<Fine | null>(null);
 
@@ -66,15 +71,17 @@ const partialFines = computed(() => props.fines.filter(f => !f.fine_paid && (f.f
 const unpaidFines = computed(() => props.fines.filter(f => !f.fine_paid && (!f.fine_paid_amount || f.fine_paid_amount == 0)));
 
 const handleSearch = useDebounceFn(() => {
-    router.get(route('admin.fines.index'), { search: searchQuery.value }, {
+    router.get(route('admin.fines.index'), {
+        search: searchQuery.value,
+        library_id: selectedLibrary.value !== 'all' ? selectedLibrary.value : null,
+    }, {
         preserveState: true,
         replace: true
     });
 }, 300);
 
-watch(searchQuery, () => {
-    handleSearch();
-});
+watch(searchQuery, () => { handleSearch(); });
+watch(selectedLibrary, () => { handleSearch(); });
 
 const openPaymentDialog = (fine: Fine) => {
     selectedFine.value = fine;
@@ -107,25 +114,26 @@ const onFileChange = (e: Event) => {
     <Head title="Fines & Payments" />
     <AppLayout :breadcrumbs="breadcrumbs">
         <div class="space-y-6">
-            <!-- Header Section -->
-            <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-2 border-b border-border">
-                <div class="space-y-1">
-                    <h1 class="text-3xl font-black tracking-tight text-foreground">Fines & Payments <span class="text-primary text-6xl leading-none">.</span></h1>
-                    <p class="text-yellow-800 font-medium">Monitor overdue penalties and manage member payment records.</p>
+            <PageHeader title="Fines & Payments " description="Monitor overdue penalties and manage member payment records.">
+                <template v-if="is_super_admin && libraries?.length">
+                    <select
+                        v-model="selectedLibrary"
+                        class="h-9 rounded-md border border-input bg-background px-3 text-sm focus:border-ring focus:ring-ring"
+                    >
+                        <option value="all">All Libraries</option>
+                        <option v-for="lib in libraries" :key="lib.id" :value="String(lib.id)">{{ lib.name }}</option>
+                    </select>
+                </template>
+                <div class="relative w-full md:w-80 h-11">
+                    <Search class="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                        v-model="searchQuery"
+                        type="search"
+                        placeholder="Search by member name..."
+                        class="pl-11 h-full bg-background border-input rounded-xl focus-visible:ring-ring"
+                    />
                 </div>
-
-                <div class="flex items-center gap-3">
-                    <div class="relative w-full md:w-80 h-11">
-                        <Search class="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input
-                            v-model="searchQuery"
-                            type="search"
-                            placeholder="Search by member name..."
-                            class="pl-11 h-full bg-background border-input rounded-xl focus-visible:ring-ring"
-                        />
-                    </div>
-                </div>
-            </div>
+            </PageHeader>
 
             <Tabs default-value="active" class="w-full">
                 <TabsList class="grid w-[450px] grid-cols-3">

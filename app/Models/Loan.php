@@ -26,6 +26,7 @@ class Loan extends Model implements Auditable
         'fine_paid_amount',
         'notes',
         'library_id',
+        'renewals_count',
     ];
 
     protected $casts = [

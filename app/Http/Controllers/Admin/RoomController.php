@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 
+use App\Models\Library;
 use App\Models\Room;
+use App\Models\Scopes\LibraryScope;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Storage;
@@ -16,7 +18,20 @@ class RoomController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Room::query()->with('library');
+        $user = $request->user();
+        $isSuperAdmin = $user->hasRole('Super Admin');
+        $libraries = [];
+        $selectedLibraryId = null;
+
+        if ($isSuperAdmin) {
+            $libraries = Library::where('is_active', true)->orderBy('name')->get(['id', 'name']);
+            $selectedLibraryId = $request->integer('library_id') ?: null;
+        }
+
+        $query = Room::query()->with('library')
+            ->when($isSuperAdmin && $selectedLibraryId, fn ($q) =>
+                $q->withoutGlobalScope(LibraryScope::class)->where('library_id', $selectedLibraryId)
+            );
 
         // Search
         if ($request->has('search') && $request->search) {
@@ -42,8 +57,8 @@ class RoomController extends Controller
             $query->where('capacity', '>=', $request->min_capacity);
         }
 
-        // Filter by library
-        if ($request->has('library_id') && $request->library_id !== 'all') {
+        // Filter by library (for non-super-admin, already handled by global scope)
+        if (!$isSuperAdmin && $request->has('library_id') && $request->library_id !== 'all') {
             $query->where('library_id', $request->library_id);
         }
 
@@ -56,15 +71,17 @@ class RoomController extends Controller
         $room = new Room();
 
         return Inertia::render('admins/Rooms/Index', [
-            'rooms' => $rooms,
-            'filters' => $request->only(['search', 'type', 'status', 'min_capacity', 'sort_by', 'sort_order', 'library_id']),
-            'types' => $room->roomTypes,
-            'statuses' => $room->statuses,
-            'amenitiesList' => $room->amenitiesList,
-            'libraries' => \App\Models\Library::orderBy('name')->get(['id', 'name']),
+            'rooms'               => $rooms,
+            'filters'             => $request->only(['search', 'type', 'status', 'min_capacity', 'sort_by', 'sort_order', 'library_id']),
+            'types'               => $room->roomTypes,
+            'statuses'            => $room->statuses,
+            'amenitiesList'       => $room->amenitiesList,
+            'libraries'           => $isSuperAdmin ? $libraries : \App\Models\Library::orderBy('name')->get(['id', 'name']),
+            'selected_library_id' => $selectedLibraryId,
+            'is_super_admin'      => $isSuperAdmin,
             'can' => [
                 'createRooms' => $request->user()->can('create rooms'),
-                'editRooms' => $request->user()->can('edit rooms'),
+                'editRooms'   => $request->user()->can('edit rooms'),
                 'deleteRooms' => $request->user()->can('delete rooms'),
             ],
         ]);
@@ -120,7 +137,7 @@ class RoomController extends Controller
 
         Room::create($validated);
 
-        return redirect()->route('rooms.index')
+        return redirect()->route('admin.rooms.index')
             ->with('success', 'Room created successfully!');
     }
 
@@ -206,7 +223,7 @@ class RoomController extends Controller
 
         $room->update($validated);
 
-        return redirect()->route('rooms.show', $room->id)
+        return redirect()->route('admin.rooms.show', $room->id)
             ->with('success', 'Room updated successfully!');
     }
     /**
@@ -236,7 +253,7 @@ class RoomController extends Controller
 
         $room->delete();
 
-        return redirect()->route('rooms.index')
+        return redirect()->route('admin.rooms.index')
             ->with('success', 'Room deleted successfully!');
     }
 }

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
+import PageHeader from '@/components/PageHeader.vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { BreadcrumbItem } from '@/types';
@@ -151,9 +152,7 @@ const StripeLogo = {
             <!-- Header Section -->
             <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-2 border-b border-slate-100">
                 <div class="space-y-1">
-                    <h1 class="text-3xl font-black tracking-tight text-slate-900">
-                        Fine Details for Ref #LOAN-{{ fine.id.toString().padStart(4, '0') }} <span class="text-indigo-600 text-6xl leading-none">.</span>
-                    </h1>
+                    <PageHeader :title="`Fine Details for Ref #LOAN-{{ fine.id.toString().padStart(4, '0') }} `" />
                 </div>
             </div>
 
@@ -186,14 +185,14 @@ const StripeLogo = {
                                 <div class="relative flex items-center justify-between gap-2">
                                     <!-- Borrowed -->
                                     <div class="flex flex-col items-center gap-1.5 z-10">
-                                        <div class="h-9 w-9 rounded-full bg-indigo-600 flex items-center justify-center shadow-md shadow-indigo-100">
+                                        <div class="h-9 w-9 rounded-full bg-[#0d1a14] flex items-center justify-center shadow-md shadow-[#c5a059]/100">
                                             <BookOpen class="h-4 w-4 text-white" />
                                         </div>
                                         <span class="text-xs font-bold text-slate-700 text-center whitespace-nowrap">{{ fine.borrowed_date }}</span>
                                     </div>
 
                                     <!-- Line segment 1 -->
-                                    <div class="flex-1 h-0.5 bg-indigo-300 -mt-5"></div>
+                                    <div class="flex-1 h-0.5 bg-[#c5a059]/40 -mt-5"></div>
 
                                     <!-- Due -->
                                     <div class="flex flex-col items-center gap-1.5 z-10">
@@ -241,7 +240,7 @@ const StripeLogo = {
                                 </div>
                                 <div class="flex justify-between items-center pt-4 border-t">
                                     <span class="text-base font-black text-slate-900">Remaining Balance</span>
-                                    <span class="text-2xl font-black text-indigo-600">RM {{ fine.remaining_amount.toFixed(2) }}</span>
+                                    <span class="text-2xl font-black text-[#c5a059]">RM {{ fine.remaining_amount.toFixed(2) }}</span>
                                 </div>
                             </div>
 
@@ -249,11 +248,11 @@ const StripeLogo = {
                             <div class="space-y-3 py-6 border-t">
                                 <div class="flex justify-between items-center text-[10px] font-black uppercase tracking-widest">
                                     <span class="text-slate-400">Payment Progress</span>
-                                    <span class="text-indigo-600">{{ paymentPercentage }}% Settled</span>
+                                    <span class="text-[#c5a059]">{{ paymentPercentage }}% Settled</span>
                                 </div>
                                 <div class="h-3 w-full bg-slate-100 rounded-full overflow-hidden border border-slate-200/50 p-0.5">
                                     <div 
-                                        class="h-full bg-indigo-600 rounded-full transition-all duration-1000 ease-out"
+                                        class="h-full bg-[#0d1a14] rounded-full transition-all duration-1000 ease-out"
                                         :style="{ width: `${paymentPercentage}%` }"
                                     ></div>
                                 </div>
@@ -288,42 +287,42 @@ const StripeLogo = {
                 <!-- Right Column: Payment & Security -->
                 <div class="lg:col-span-2 space-y-6">
                     <!-- Secure Payment Card (Only if balance remains) -->
-                    <Card v-if="fine.remaining_amount > 0" class="border shadow-lg bg-indigo-50/30 border-indigo-100 overflow-hidden pt-6 relative">
+                    <Card v-if="fine.remaining_amount > 0" class="border border-[#c5a059]/20 bg-[#c5a059]/5 overflow-hidden pt-6 relative">
                         <div class="absolute right-4 top-4 opacity-5">
                              <StripeLogo class="h-12 w-12" />
                         </div>
                         <CardHeader>
-                            <CardTitle class="text-sm font-black uppercase tracking-widest text-indigo-900 flex items-center gap-2">
+                            <CardTitle class="text-sm font-black uppercase tracking-widest text-[#0d1a14] flex items-center gap-2">
                                 <ShieldCheck class="h-4 w-4" /> Secure Payment
                             </CardTitle>
                         </CardHeader>
                         <CardContent class="space-y-6 pb-6">
                             <div>
-                                <label class="text-[10px] font-black uppercase tracking-widest text-indigo-900/50 mb-2 block pl-1">Amount to pay (RM)</label>
+                                <label class="text-[10px] font-black uppercase tracking-widest text-[#0d1a14]/50 mb-2 block pl-1">Amount to pay (RM)</label>
                                 <div class="relative">
-                                    <span class="absolute left-4 top-1/2 -translate-y-1/2 text-indigo-600 font-black">RM</span>
+                                    <span class="absolute left-4 top-1/2 -translate-y-1/2 text-[#c5a059] font-black">RM</span>
                                     <input 
                                         type="number" 
                                         v-model="paymentAmount"
                                         :max="fine.remaining_amount"
                                         min="1"
                                         step="0.01"
-                                        class="w-full h-14 pl-12 pr-4 rounded-xl border-2 border-indigo-100 focus:border-indigo-600 focus:ring-4 focus:ring-indigo-100 bg-white font-black text-xl text-indigo-900 transition-all outline-none"
+                                        class="w-full h-14 pl-12 pr-4 rounded-xl border-2 border-[#c5a059]/30 focus:border-[#c5a059] focus:ring-4 focus:ring-[#c5a059]/10 bg-white font-black text-xl text-[#0d1a14] transition-all outline-none"
                                     />
                                 </div>
                                 <div class="flex justify-between mt-2 px-1">
                                     <button 
                                         @click="paymentAmount = fine.remaining_amount"
-                                        class="text-[10px] font-black uppercase tracking-widest text-indigo-600 hover:underline"
+                                        class="text-[10px] font-black uppercase tracking-widest text-[#c5a059] hover:underline"
                                     >
                                         Pay full amount
                                     </button>
-                                    <span class="text-[10px] font-bold text-indigo-400 uppercase">Min: RM 1.00</span>
+                                    <span class="text-[10px] font-bold text-[#c5a059]/60 uppercase">Min: RM 1.00</span>
                                 </div>
                             </div>
 
                             <Button 
-                                class="w-full h-14 text-lg font-black bg-indigo-600 hover:bg-indigo-700 shadow-xl shadow-indigo-200 transition-all hover:scale-[1.02] active:scale-98 gap-3"
+                                class="w-full h-14 text-lg font-black bg-[#0d1a14] hover:bg-[#122010] shadow-xl shadow-[#c5a059]/20 transition-all hover:scale-[1.02] active:scale-98 gap-3"
                                 :disabled="isPaying || paymentAmount <= 0"
                                 @click="handlePayment"
                             >
@@ -332,13 +331,13 @@ const StripeLogo = {
                                 {{ isPaying ? 'Connecting...' : 'Continue to Payment' }}
                             </Button>
 
-                            <div class="pt-2 flex flex-col gap-3 border-t border-indigo-100/50 mt-4">
-                                <div class="flex items-center gap-3 text-[10px] text-indigo-900/60 font-black uppercase tracking-widest">
-                                    <CheckCircle2 class="h-4 w-4 text-indigo-500" />
+                            <div class="pt-2 flex flex-col gap-3 border-t border-[#c5a059]/20 mt-4">
+                                <div class="flex items-center gap-3 text-[10px] text-[#0d1a14]/60 font-black uppercase tracking-widest">
+                                    <CheckCircle2 class="h-4 w-4 text-[#c5a059]" />
                                     SSL Encrypted Transaction
                                 </div>
-                                <div class="flex items-center gap-3 text-[10px] text-indigo-900/60 font-black uppercase tracking-widest">
-                                    <CheckCircle2 class="h-4 w-4 text-indigo-500" />
+                                <div class="flex items-center gap-3 text-[10px] text-[#0d1a14]/60 font-black uppercase tracking-widest">
+                                    <CheckCircle2 class="h-4 w-4 text-[#c5a059]" />
                                     PCI Compliant Checkout
                                 </div>
                             </div>
@@ -358,19 +357,19 @@ const StripeLogo = {
                                 :key="payment.id" 
                                 class="bg-white border rounded-2xl overflow-hidden transition-all duration-300 shadow-sm"
                                 :class="[
-                                    expandedPaymentId === payment.id ? 'border-indigo-200 ring-4 ring-indigo-50' : 'hover:border-indigo-100'
+                                    expandedPaymentId === payment.id ? 'border-[#c5a059]/30 ring-2 ring-[#c5a059]/10' : 'hover:border-[#c5a059]/20'
                                 ]"
                             >
                                 <!-- Header (Clickable) -->
                                 <div 
                                     @click="toggleExpand(payment.id)"
                                     class="w-full p-4 flex items-center justify-between text-left transition-colors cursor-pointer segment-header"
-                                    :class="{ 'bg-indigo-50/30': expandedPaymentId === payment.id }"
+                                    :class="{ 'bg-[#c5a059]/5': expandedPaymentId === payment.id }"
                                 >
                                     <div class="flex items-center gap-4">
                                         <div 
                                             class="h-10 w-10 rounded-xl flex items-center justify-center transition-colors"
-                                            :class="expandedPaymentId === payment.id ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-100' : 'bg-indigo-50 text-indigo-600'"
+                                            :class="expandedPaymentId === payment.id ? 'bg-[#0d1a14] text-white shadow-lg shadow-[#c5a059]/10' : 'bg-[#c5a059]/10 text-[#c5a059]'"
                                         >
                                             <CreditCard class="h-5 w-5" />
                                         </div>
@@ -387,7 +386,7 @@ const StripeLogo = {
                                         </div>
                                         <ChevronDown 
                                             class="h-5 w-5 text-slate-300 transition-transform duration-300"
-                                            :class="{ 'rotate-180 text-indigo-600': expandedPaymentId === payment.id }"
+                                            :class="{ 'rotate-180 text-[#c5a059]': expandedPaymentId === payment.id }"
                                         />
                                     </div>
                                 </div>
@@ -395,13 +394,13 @@ const StripeLogo = {
                                 <!-- Expanded Content -->
                                 <div 
                                     v-if="expandedPaymentId === payment.id"
-                                    class="px-4 pb-4 pt-1 space-y-4 border-t border-indigo-100 bg-indigo-50/20"
+                                    class="px-4 pb-4 pt-1 space-y-4 border-t border-[#c5a059]/20 bg-[#c5a059]/5"
                                 >
                                     <div class="grid grid-cols-2 gap-4 pt-3">
                                         <div class="space-y-1">
                                             <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Payment Method</span>
                                             <div class="text-[11px] font-bold text-slate-700 capitalize flex items-center gap-1.5">
-                                                <div class="h-1.5 w-1.5 rounded-full bg-indigo-500"></div>
+                                                <div class="h-1.5 w-1.5 rounded-full bg-[#c5a059]"></div>
                                                 {{ payment.method }}
                                             </div>
                                         </div>
@@ -414,12 +413,12 @@ const StripeLogo = {
                                         </div>
                                     </div>
 
-                                    <div class="bg-white/80 border border-indigo-100 rounded-xl p-3 space-y-2">
+                                    <div class="bg-white/80 border border-[#c5a059]/20 rounded-xl p-3 space-y-2">
                                         <div class="flex items-center justify-between">
                                             <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Full Stripe Reference</span>
                                             <button 
                                                 @click.stop="handleCopyId(payment.stripe_id)"
-                                                class="flex items-center gap-1.5 text-[10px] font-black uppercase text-indigo-600 hover:text-indigo-700 transition-colors"
+                                                class="flex items-center gap-1.5 text-[10px] font-black uppercase text-[#c5a059] hover:text-[#b8924a] transition-colors"
                                             >
                                                 <component :is="copiedId === payment.stripe_id ? Check : Copy" class="h-3 w-3" />
                                                 {{ copiedId === payment.stripe_id ? 'Copied' : 'Copy' }}

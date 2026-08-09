@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { route } from 'ziggy-js';
+import PageHeader from '@/components/PageHeader.vue';
 import { reactive, ref } from 'vue';
 import { Link, router } from '@inertiajs/vue3';
 import { Head } from '@inertiajs/vue3';
@@ -153,12 +154,7 @@ const formatDate = (date: string) =>
             <!-- Header -->
             <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-2 border-b border-slate-100">
                 <div class="space-y-1">
-                    <h1 class="text-3xl font-black tracking-tight text-slate-900">
-                        All Users <span class="text-indigo-600 text-6xl leading-none">.</span>
-                    </h1>
-                    <p class="text-slate-500 font-medium">
-                        Super-admin view of every account — members, staff, and admins.
-                    </p>
+                    <PageHeader title="All Users " description="Super-admin view of every account — members, staff, and admins." />
                 </div>
 
                 <div class="flex items-center gap-2 text-sm text-muted-foreground bg-muted px-4 py-2 rounded-lg">

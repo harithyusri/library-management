@@ -7,6 +7,7 @@ import AppLayout from '@/layouts/AppLayout.vue';
 import FlashAlert from '@/components/FlashAlert.vue';
 import { Button } from '@/components/ui/button';
 import { Megaphone } from 'lucide-vue-next';
+import PageHeader from '@/components/PageHeader.vue';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -47,22 +48,14 @@ const formatDate = (dateString: string) => {
         <div class="flex flex-1 flex-col gap-6 overflow-x-auto">
 
             <FlashAlert />
-            <!-- Header Section -->
-            <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-2 border-b border-slate-100">
-                <div class="space-y-1">
-                    <h1 class="text-3xl font-black tracking-tight text-yellow-950">Announcements <span class="text-primary text-6xl leading-none">.</span></h1>
-                    <p class="text-yellow-800 font-medium">Broadcast updates, events, and important news to library members.</p>
-                </div>
-
-                <div class="flex items-center gap-3">
+            <PageHeader title="Announcements " description="Broadcast updates, events, and important news to library members.">
                     <Link v-if="$page.props.auth.can?.create_announcements" :href="route('admin.announcements.create')" class="contents">
                         <Button class="bg-primary hover:opacity-90 text-primary-foreground rounded-lg px-4 py-2 text-sm font-bold flex items-center gap-2">
                             <Megaphone class="h-4 w-4" />
                             Create New Announcement
                         </Button>
                     </Link>
-                </div>
-            </div>
+            </PageHeader>
 
             <!-- Announcements Grid -->
             <div v-if="announcements.data.length" class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">

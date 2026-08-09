@@ -8,9 +8,6 @@ import { Badge } from '@/components/ui/badge';
 import {
     Card,
     CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
 } from '@/components/ui/card';
 import {
     Table,
@@ -59,36 +56,33 @@ const getStatusBadge = (status: string) => {
         <div class="space-y-8">
             <FlashAlert />
 
-            <!-- Header Section -->
-            <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-2 border-b border-slate-100">
-                <div class="space-y-1">
-                    <h1 class="text-3xl font-black tracking-tight text-slate-900">
-                        My Fines & Penalties <span class="text-indigo-600 text-6xl leading-none">.</span>
-                    </h1>
-                    <p class="text-slate-500 font-medium">Track your outstanding dues and settle them securely.</p>
-                </div>
-            </div>
+            <!-- Hero -->
+            <section class="border-b border-border bg-[image:var(--gradient-warm)] -mx-4 px-4 sm:-mx-6 sm:px-6 py-6">
+                <p class="text-[11px] uppercase tracking-[0.22em] text-muted-foreground">Member portal</p>
+                <h1 class="mt-3 font-serif text-3xl lg:text-4xl leading-[1.05]">My Fines & Penalties</h1>
+                <p class="mt-3 max-w-lg text-sm text-muted-foreground leading-relaxed">Track your outstanding dues and settle them securely.</p>
+            </section>
 
             <!-- Summary Section -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <Card class="md:col-span-2 overflow-hidden border-none shadow-2xl bg-gradient-to-br from-indigo-600 to-violet-700 text-white relative group py-6 md:py-4">
+                <Card class="md:col-span-2 overflow-hidden border-none shadow-2xl bg-gradient-to-br from-[#0d1a14] to-[#1a2e26] text-white relative group py-6 md:py-4">
                     <div class="absolute -right-16 -top-16 w-64 h-64 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-all duration-700"></div>
-                    <CardHeader class="relative z-10">
-                        <CardTitle class="text-indigo-100 font-medium text-sm md:text-base">Total Outstanding</CardTitle>
+                    <CardHeader class="relative z-10 pl-6">
+                        <CardTitle class="text-[#f1f5f9]/80 font-medium text-sm md:text-base">Total Outstanding</CardTitle>
                         <div class="flex items-baseline gap-2 pt-1 md:pt-2">
                             <span class="text-4xl md:text-5xl font-black tracking-tighter">RM {{ total_unpaid.toFixed(2) }}</span>
                         </div>
                     </CardHeader>
                     <CardContent class="relative z-10 pt-2 md:pt-4">
-                        <p class="text-indigo-100/80 text-xs md:text-sm leading-relaxed max-w-xs">
+                        <p class="text-[#f1f5f9]/50 text-xs md:text-sm leading-relaxed max-w-xs">
                             Please settle your fines to avoid restrictions on book borrowing and room reservations.
                         </p>
                     </CardContent>
                 </Card>
 
-                <Card class="border-indigo-100 bg-indigo-50/30 py-2 md:py-4 hidden md:block">
+                <Card class="border-[#c5a059]/20 bg-[#c5a059]/5 py-2 md:py-4 hidden md:block">
                     <CardHeader>
-                        <CardTitle class="text-lg flex items-center gap-2 text-indigo-900">
+                        <CardTitle class="text-lg flex items-center gap-2 text-[#0d1a14] pl-6">
                             <CreditCard class="h-5 w-5" /> Secured by Stripe
                         </CardTitle>
                     </CardHeader>
@@ -98,37 +92,38 @@ const getStatusBadge = (status: string) => {
                         </p> -->
                         <div class="space-y-2.5">
                             <div class="flex items-center gap-2.5 text-xs text-slate-500">
-                                <div class="h-6 w-6 rounded-lg bg-indigo-100 flex items-center justify-center shrink-0">
-                                    <ShieldCheck class="h-3.5 w-3.5 text-indigo-600" />
+                                <div class="h-6 w-6 rounded-lg bg-[#c5a059]/10 flex items-center justify-center shrink-0">
+                                    <ShieldCheck class="h-3.5 w-3.5 text-[#c5a059]" />
                                 </div>
                                 <span>256-bit SSL encryption on all payments</span>
                             </div>
                             <div class="flex items-center gap-2.5 text-xs text-slate-500">
-                                <div class="h-6 w-6 rounded-lg bg-indigo-100 flex items-center justify-center shrink-0">
-                                    <Lock class="h-3.5 w-3.5 text-indigo-600" />
+                                <div class="h-6 w-6 rounded-lg bg-[#c5a059]/10 flex items-center justify-center shrink-0">
+                                    <Lock class="h-3.5 w-3.5 text-[#c5a059]" />
                                 </div>
                                 <span>Card details never stored on our servers</span>
                             </div>
                             <div class="flex items-center gap-2.5 text-xs text-slate-500">
-                                <div class="h-6 w-6 rounded-lg bg-indigo-100 flex items-center justify-center shrink-0">
-                                    <BadgeCheck class="h-3.5 w-3.5 text-indigo-600" />
+                                <div class="h-6 w-6 rounded-lg bg-[#c5a059]/10 flex items-center justify-center shrink-0">
+                                    <BadgeCheck class="h-3.5 w-3.5 text-[#c5a059]" />
                                 </div>
                                 <span>PCI DSS compliant payment processing</span>
                             </div>
                         </div>
-                        <div class="pt-1 border-t border-indigo-100">
-                            <p class="text-[10px] text-slate-400 font-medium">Powered by <span class="font-bold text-indigo-500">Stripe</span> — trusted by millions worldwide.</p>
+                        <div class="pt-1 border-t border-[#c5a059]/20">
+                            <p class="text-[10px] text-slate-400 font-medium">Powered by <span class="font-bold text-[#c5a059]">Stripe</span> — trusted by millions worldwide.</p>
                         </div>
                     </CardContent>
                 </Card>
             </div>
 
             <!-- Fines Table (Shown on Desktop) -->
-            <Card class="border shadow-lg overflow-hidden py-4 hidden md:block">
-                <CardHeader>
-                    <CardTitle class="text-xl font-bold text-slate-800">Payment History & Dues</CardTitle>
-                    <CardDescription>A complete list of your current and past penalties.</CardDescription>
-                </CardHeader>
+            <div class="hidden md:block space-y-3">
+            <div>
+                <h2 class="text-xl font-bold text-slate-800">Payment History & Dues</h2>
+                <p class="text-sm text-muted-foreground">A complete list of your current and past penalties.</p>
+            </div>
+            <Card class="border shadow-lg overflow-hidden">
                 <Table>
                     <TableHeader>
                         <TableRow class="bg-slate-50/30">
@@ -148,7 +143,7 @@ const getStatusBadge = (status: string) => {
                             <TableCell class="text-slate-600 font-medium">{{ fine.due_date }}</TableCell>
                             <TableCell>
                                 <div class="font-bold text-slate-900">RM {{ fine.fine_amount.toFixed(2) }}</div>
-                                <div v-if="fine.fine_paid_amount > 0" class="text-[10px] text-indigo-600 font-black uppercase">
+                                <div v-if="fine.fine_paid_amount > 0" class="text-[10px] text-[#c5a059] font-black uppercase">
                                     Paid RM {{ fine.fine_paid_amount.toFixed(2) }}
                                 </div>
                             </TableCell>
@@ -164,7 +159,7 @@ const getStatusBadge = (status: string) => {
                                         <Button
                                             variant="outline"
                                             size="sm"
-                                            class="h-8 px-3 gap-1 text-xs font-semibold border-slate-200 hover:border-indigo-300 hover:text-indigo-600 transition-all"
+                                            class="h-8 px-3 gap-1 text-xs font-semibold border-slate-200 hover:border-[#c5a059] hover:text-[#c5a059] transition-all"
                                         >
                                             Details <ChevronRight class="h-3.5 w-3.5" />
                                         </Button>
@@ -172,7 +167,7 @@ const getStatusBadge = (status: string) => {
                                     <Link v-if="!fine.fine_paid" :href="route('member.fines.show', fine.id)">
                                         <Button
                                             size="sm"
-                                            class="h-8 px-3 text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm transition-all"
+                                            class="h-8 px-3 text-xs font-bold bg-[#0d1a14] hover:bg-[#122010] text-[#f1f5f9] transition-all"
                                         >
                                             Pay Now
                                         </Button>
@@ -181,7 +176,7 @@ const getStatusBadge = (status: string) => {
                                         <Button
                                             size="sm"
                                             variant="outline"
-                                            class="h-8 px-3 text-xs font-bold border-indigo-200 text-indigo-600 hover:bg-indigo-50 transition-all"
+                                            class="h-8 px-3 text-xs font-bold border-[#c5a059]/30 text-[#c5a059] hover:bg-[#c5a059]/10 transition-all"
                                         >
                                             Receipt
                                         </Button>
@@ -205,6 +200,7 @@ const getStatusBadge = (status: string) => {
                     </TableBody>
                 </Table>
             </Card>
+            </div>
 
             <!-- Mobile List (Shown on mobile) -->
             <div class="md:hidden space-y-4">
@@ -229,7 +225,7 @@ const getStatusBadge = (status: string) => {
                         <div class="text-right">
                             <div class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Amount</div>
                             <div class="text-sm font-black text-slate-900">RM {{ fine.fine_amount.toFixed(2) }}</div>
-                            <div v-if="fine.fine_paid_amount > 0" class="text-[9px] text-indigo-600 font-bold uppercase">
+                            <div v-if="fine.fine_paid_amount > 0" class="text-[9px] text-[#c5a059] font-bold uppercase">
                                 Paid RM {{ fine.fine_paid_amount.toFixed(2) }}
                             </div>
                         </div>
@@ -239,7 +235,7 @@ const getStatusBadge = (status: string) => {
                         <Link 
                             v-if="!fine.fine_paid"
                             :href="route('member.fines.show', fine.id)"
-                            class="w-full inline-flex items-center justify-center rounded-xl h-11 text-sm font-black bg-indigo-600 text-white hover:bg-indigo-700 shadow-md transition-all active:scale-95"
+                            class="w-full inline-flex items-center justify-center rounded-xl h-11 text-sm font-black bg-[#0d1a14] text-[#f1f5f9] hover:bg-[#122010] transition-all active:scale-95"
                         >
                             Pay RM {{ fine.remaining_amount.toFixed(2) }}
                         </Link>
@@ -254,7 +250,7 @@ const getStatusBadge = (status: string) => {
                                 v-if="fine.fine_paid"
                                 :href="route('member.fines.receipt', fine.id)"
                                 target="_blank"
-                                class="flex-1 inline-flex items-center justify-center rounded-xl h-11 text-sm font-bold bg-indigo-50 text-indigo-700 border border-indigo-100 hover:bg-indigo-100 transition-all active:scale-95 gap-2"
+                                class="flex-1 inline-flex items-center justify-center rounded-xl h-11 text-sm font-bold bg-[#c5a059]/10 text-[#0d1a14] border border-[#c5a059]/20 hover:bg-[#c5a059]/20 transition-all active:scale-95 gap-2"
                             >
                                 <Receipt class="h-4 w-4" />
                                 Receipt

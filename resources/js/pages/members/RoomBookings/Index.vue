@@ -1,182 +1,132 @@
 <script setup lang="ts">
-import { Head, Link, router } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { Head, Link } from '@inertiajs/vue3';
 import AppLayout from '@/layouts/AppLayout.vue';
 import FlashAlert from '@/components/FlashAlert.vue';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { 
-    Calendar, 
-    Clock, 
-    CheckCircle2, 
-    AlertCircle, 
-    History,
-    Plus,
-    DoorClosed,
-    Users,
-    MapPin,
-    ArrowRight
-} from 'lucide-vue-next';
+import { Calendar, Clock, CheckCircle2, AlertCircle, Plus, DoorClosed, Users, MapPin, ArrowRight } from 'lucide-vue-next';
 import { route } from 'ziggy-js';
 
-const props = defineProps<{
-    bookings: any[];
-}>();
+defineProps<{ bookings: any[] }>();
 
-const breadcrumbs = [
-    { title: 'Room Bookings', href: route('member.room-bookings.index') },
-];
+const breadcrumbs = [{ title: 'Room Bookings', href: route('member.room-bookings.index') }];
 
-const formatDate = (date: string): string => {
-    return new Date(date).toLocaleDateString('en-US', {
-        weekday: 'short',
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-    });
-};
+const formatDate = (date: string) =>
+    new Date(date).toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
 
-const getStatusConfig = (status: string) => {
+const statusConfig = (status: string) => {
     const s = status.toLowerCase();
-    if (s === 'confirmed' || s === 'completed') {
-        return {
-            label: s === 'confirmed' ? 'Confirmed' : 'Completed',
-            icon: CheckCircle2,
-            bgColor: 'bg-emerald-50 text-emerald-600 border-emerald-100',
-            progressColor: 'bg-emerald-500'
-        };
-    }
-    if (s === 'cancelled' || s === 'rejected') {
-        return {
-            label: 'Cancelled',
-            icon: AlertCircle,
-            bgColor: 'bg-red-50 text-red-600 border-red-100',
-            progressColor: 'bg-red-500'
-        };
-    }
-    return {
-        label: 'Pending',
-        icon: Clock,
-        bgColor: 'bg-amber-50 text-amber-600 border-amber-100',
-        progressColor: 'bg-amber-500'
-    };
+    if (s === 'confirmed' || s === 'completed') return { label: s === 'confirmed' ? 'Confirmed' : 'Completed', class: 'bg-primary/10 text-primary border-primary/25', spine: 'var(--sage)' };
+    if (s === 'cancelled' || s === 'rejected') return { label: 'Cancelled', class: 'bg-destructive/10 text-destructive border-destructive/25', spine: 'var(--dust)' };
+    return { label: 'Pending', class: 'bg-[color:var(--brass)]/15 text-[color:var(--leather)] border-[color:var(--brass)]/40', spine: 'var(--brass)' };
 };
-
 </script>
 
 <template>
     <Head title="Room Bookings" />
-
     <AppLayout :breadcrumbs="breadcrumbs">
-        <div class="space-y-8">
-            <FlashAlert />
+        <div class="space-y-0">
+            <FlashAlert class="mb-4" />
 
-            <!-- Header Section -->
-            <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-2">
-                <div class="space-y-1">
-                    <h1 class="text-3xl font-black tracking-tight text-slate-900">Room Bookings <span class="text-indigo-600 text-6xl leading-none">.</span></h1>
-                    <p class="text-slate-500 font-medium">Reserve and manage your library room bookings.</p>
-                </div>
+            <!-- Hero -->
+            <section class="border-b border-border bg-[image:var(--gradient-warm)] -mx-4 px-4 sm:-mx-6 sm:px-6 py-6">
+                <p class="text-[11px] uppercase tracking-[0.22em] text-muted-foreground">Member portal</p>
+                <h1 class="mt-3 font-serif text-3xl lg:text-4xl leading-[1.05]">
+                    Room Bookings
+                </h1>
+                <p class="mt-3 max-w-lg text-sm text-muted-foreground leading-relaxed">
+                    Reserve and manage your library study room bookings.
+                </p>
+            </section>
 
+            <!-- Shelf heading -->
+            <div class="flex items-end justify-between gap-4 pt-8 pb-4">
+                <h2 class="font-serif text-2xl">Your bookings</h2>
                 <Link :href="route('member.room-bookings.create')">
-                    <Button class="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl px-6 h-11 font-bold shadow-lg shadow-indigo-100 dark:shadow-none flex items-center gap-2">
-                        <Plus class="h-5 w-5" />
-                        Book a Room
+                    <Button size="sm" class="rounded-full font-bold" style="background: var(--ink); color: var(--dust);">
+                        <Plus class="h-3.5 w-3.5 mr-1.5" /> Book a Room
                     </Button>
                 </Link>
             </div>
 
-            <!-- List Grid -->
-            <div v-if="bookings.length > 0" class="grid grid-cols-1 gap-4">
-                <Card v-for="booking in bookings" :key="booking.id" class="group border-slate-200 overflow-hidden hover:border-indigo-200 transition-all duration-300 shadow-sm hover:shadow-md rounded-2xl">
-                    <CardContent class="p-0">
-                        <div class="flex flex-col lg:flex-row">
-                            <!-- Room Visual Info -->
-                            <div class="w-full lg:w-48 bg-slate-50 flex flex-col items-center justify-center p-6 border-b lg:border-b-0 lg:border-r border-slate-100 group-hover:bg-indigo-50/30 transition-colors">
-                                <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 mb-3 group-hover:scale-110 transition-transform duration-500">
-                                    <DoorClosed class="h-8 w-8 text-indigo-500" />
+            <!-- List -->
+            <div v-if="bookings.length > 0" class="flex flex-col gap-4">
+                <article
+                    v-for="booking in bookings"
+                    :key="booking.id"
+                    class="group relative border border-border rounded-xl overflow-hidden transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[var(--shadow-book)] bg-card"
+                >
+                    <span class="absolute left-0 top-0 h-full w-1.5" :style="{ background: statusConfig(booking.status).spine }" />
+
+                    <div class="flex flex-col lg:flex-row pl-2">
+                        <!-- Icon panel -->
+                        <div class="w-full lg:w-40 bg-secondary/40 flex flex-col items-center justify-center p-6 border-b lg:border-b-0 lg:border-r border-border">
+                            <div class="bg-card p-3 rounded-xl border border-border mb-2 group-hover:scale-110 transition-transform duration-500">
+                                <DoorClosed class="h-7 w-7" style="color: var(--brass)" />
+                            </div>
+                            <p class="text-[10px] font-bold uppercase tracking-widest text-muted-foreground text-center">{{ booking.room.room_number }}</p>
+                        </div>
+
+                        <!-- Content -->
+                        <div class="flex-1 p-6 space-y-4">
+                            <div class="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
+                                <div class="space-y-1">
+                                    <span class="rounded-full border px-2.5 py-0.5 text-[11px] font-bold" :class="statusConfig(booking.status).class">
+                                        {{ statusConfig(booking.status).label }}
+                                    </span>
+                                    <h3 class="font-serif text-xl leading-tight group-hover:text-[color:var(--leather)] transition-colors">
+                                        {{ booking.room.name }}
+                                    </h3>
+                                    <p class="text-sm text-muted-foreground flex items-center gap-1.5">
+                                        <MapPin class="h-3.5 w-3.5" /> {{ booking.room.library?.name ?? 'Library' }}
+                                    </p>
                                 </div>
-                                <div class="text-[10px] font-bold uppercase tracking-widest text-slate-400 text-center">
-                                    {{ booking.room.room_number }}
+
+                                <div class="flex flex-wrap gap-x-6 gap-y-3 text-sm shrink-0">
+                                    <div class="space-y-0.5">
+                                        <span class="block text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Date</span>
+                                        <span class="font-bold flex items-center gap-1.5 whitespace-nowrap">
+                                            <Calendar class="h-3.5 w-3.5 text-muted-foreground" /> {{ formatDate(booking.booking_date) }}
+                                        </span>
+                                    </div>
+                                    <div class="space-y-0.5">
+                                        <span class="block text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Time</span>
+                                        <span class="font-bold flex items-center gap-1.5 whitespace-nowrap">
+                                            <Clock class="h-3.5 w-3.5 text-muted-foreground" /> {{ booking.start_time }} – {{ booking.end_time }}
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
 
-                            <!-- Main Content -->
-                            <div class="flex-1 p-6 space-y-6">
-                                <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                                    <div class="space-y-1">
-                                        <div class="flex items-center gap-2">
-                                            <Badge variant="outline" :class="getStatusConfig(booking.status).bgColor" class="px-2 py-0 h-5 text-[10px] uppercase font-bold tracking-wider rounded-md border-0">
-                                                {{ getStatusConfig(booking.status).label }}
-                                            </Badge>
-                                        </div>
-                                        <h3 class="text-xl font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">
-                                            {{ booking.room.name }}
-                                        </h3>
-                                        <p class="text-sm text-slate-500 font-medium flex items-center gap-1.5">
-                                            <MapPin class="h-3.5 w-3.5 text-slate-400" />
-                                            Library Level 2, Wing B
-                                        </p>
-                                    </div>
-
-                                    <div class="flex flex-wrap items-center gap-x-6 gap-y-3 text-sm">
-                                        <div class="space-y-1">
-                                            <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Date</span>
-                                            <span class="font-bold text-slate-700 flex items-center gap-1.5 whitespace-nowrap">
-                                                <Calendar class="h-3.5 w-3.5 text-slate-300" />
-                                                {{ formatDate(booking.booking_date) }}
-                                            </span>
-                                        </div>
-                                        <div class="space-y-1">
-                                            <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Time Slot</span>
-                                            <span class="font-bold text-slate-700 flex items-center gap-1.5 whitespace-nowrap">
-                                                <Clock class="h-3.5 w-3.5 text-slate-300" />
-                                                {{ booking.start_time }} - {{ booking.end_time }}
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="flex flex-wrap items-center gap-y-2 gap-x-6 pt-2 border-t border-slate-50">
-                                    <div class="flex items-center gap-2">
-                                        <Users class="h-4 w-4 text-slate-400" />
-                                        <span class="text-xs font-bold text-slate-600">Attendees: {{ booking.number_of_attendees || 'N/A' }}</span>
-                                    </div>
-                                    <div class="flex items-center gap-2" v-if="booking.purpose">
-                                        <Plus class="h-4 w-4 text-slate-400 rotate-45" />
-                                        <span class="text-xs font-bold text-slate-600">{{ booking.purpose }}</span>
-                                    </div>
-                                    <div class="ml-auto flex items-center gap-2">
-                                        <span class="text-xs font-bold text-slate-400">Total:</span>
-                                        <span class="text-sm font-black text-indigo-600">RM {{ booking.total_cost }}</span>
-                                    </div>
-                                </div>
+                            <div class="flex flex-wrap items-center gap-x-6 gap-y-2 pt-3 border-t border-border/50 text-xs text-muted-foreground">
+                                <span class="flex items-center gap-1.5"><Users class="h-3.5 w-3.5" /> {{ booking.number_of_attendees || 'N/A' }} attendees</span>
+                                <span v-if="booking.purpose">{{ booking.purpose }}</span>
+                                <span class="ml-auto font-bold" style="color: var(--brass)">RM {{ booking.total_cost }}</span>
                             </div>
                         </div>
-                    </CardContent>
-                </Card>
+                    </div>
+                </article>
             </div>
 
-            <!-- Empty State -->
-            <div v-else class="py-24 text-center space-y-6 bg-slate-50/50 rounded-3xl border-2 border-dashed border-slate-200">
-                <div class="bg-white p-6 rounded-full w-24 h-24 mx-auto shadow-sm flex items-center justify-center border border-slate-100">
-                    <DoorClosed class="h-10 w-10 text-slate-300" />
+            <!-- Empty state -->
+            <div v-else class="py-24 text-center space-y-4 rounded-xl border border-dashed border-border bg-card">
+                <div class="bg-secondary p-4 rounded-full w-20 h-20 mx-auto flex items-center justify-center border border-border">
+                    <DoorClosed class="h-10 w-10 text-muted-foreground" />
                 </div>
-                <div class="space-y-2">
-                    <h3 class="text-2xl font-black text-slate-900">No bookings yet</h3>
-                    <p class="text-slate-500 font-medium max-w-sm mx-auto">
-                        Need a quiet place to study or a room for a discussion? Browse our available rooms and make a booking today!
-                    </p>
+                <div class="space-y-1">
+                    <h3 class="font-serif text-xl">No bookings yet</h3>
+                    <p class="text-sm text-muted-foreground max-w-sm mx-auto">Need a quiet place to study? Browse our available rooms and make a booking.</p>
                 </div>
-                <div>
-                    <Link :href="route('member.room-bookings.create')">
-                        <Button class="bg-indigo-600 hover:bg-indigo-700 rounded-xl px-10 font-bold shadow-lg shadow-indigo-200/50">
-                            Book a Room
-                            <ArrowRight class="ml-2 h-4 w-4" />
-                        </Button>
-                    </Link>
-                </div>
+                <Link :href="route('member.room-bookings.create')">
+                    <Button class="rounded-full px-8 font-bold" style="background: var(--ink); color: var(--dust);">
+                        Book a Room <ArrowRight class="ml-2 h-4 w-4" />
+                    </Button>
+                </Link>
+            </div>
+
+            <!-- Quote -->
+            <div class="mt-12 rounded-xl border border-border bg-card p-6 text-center">
+                <p class="font-serif italic text-lg">"A room without books is like a body without a soul."</p>
+                <p class="mt-2 text-[11px] uppercase tracking-[0.2em] text-muted-foreground">Marcus Tullius Cicero</p>
             </div>
         </div>
     </AppLayout>
